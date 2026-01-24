@@ -1,0 +1,227 @@
+IGNITION ADVANCE TABLES - VW PASSAT B2 1.6L DT ENGINE
+=====================================================
+
+Your current table is tuned for 91 RON (conservative).
+Below are optimized tables for different fuel grades.
+
+NOTE: Start with 91 RON table, test for knock, then advance to 95/98 if no knock detected.
+
+
+TABLE 1: FOR 91 RON (European Regular) - SAFE BASELINE
+=======================================================
+Use this if you have knock/ping with current settings.
+
+Load/MAP    500   1000  1500  2000  2500  3000  3500  4000  4500  5000  5500  6000  6500  7000
+---------  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----
+100 kPa      14    16    18    20    22    24    26    28    30    30    30    30    30    28
+ 96 kPa      16    18    20    22    24    26    28    30    31    31    31    31    31    30
+ 88 kPa      18    20    22    24    26    28    30    31    32    32    32    32    32    31
+ 80 kPa      18    22    24    26    28    30    31    32    33    33    33    33    33    32
+ 74 kPa      18    24    26    28    30    31    32    33    34    34    34    34    34    33
+ 66 kPa      18    26    28    30    31    32    33    34    35    35    35    35    35    34
+ 56 kPa      18    28    30    31    32    33    34    35    36    36    36    36    36    35
+ 50 kPa      18    28    30    32    33    34    35    36    37    37    37    37    37    36
+ 46 kPa      18    28    30    32    34    35    36    37    38    38    38    38    38    37
+ 40 kPa      18    28    30    32    34    35    36    37    38    38    38    38    38    37
+ 36 kPa      18    28    32    34    35    36    37    38    38    38    38    38    38    38
+ 30 kPa      18    30    32    34    35    36    37    38    38    38    38    38    38    38
+ 26 kPa      18    30    32    34    35    36    37    38    38    38    38    38    38    38
+ 20 kPa      18    30    32    34    35    36    37    38    38    38    38    38    38    38
+ 16 kPa      18    30    32    34    35    36    37    38    38    38    38    38    38    38
+ 10 kPa      18    30    32    34    35    36    37    38    38    38    38    38    38    38
+
+KEY FEATURES (91 RON):
+- Idle (500-1000 RPM): 18° (matches factory spec)
+- WOT (100 kPa): 28-30° (conservative to prevent knock)
+- Light load: Up to 38° (best economy)
+- Redline: Pulls back to 28° (safety)
+
+
+TABLE 2: FOR 95 RON (European Premium) - RECOMMENDED
+=====================================================
+Use this for 95 octane fuel (most common premium in Europe).
+
+Load/MAP    500   1000  1500  2000  2500  3000  3500  4000  4500  5000  5500  6000  6500  7000
+---------  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----
+100 kPa      14    18    20    22    24    26    28    30    32    33    33    33    33    32
+ 96 kPa      16    20    22    24    26    28    30    32    34    34    34    34    34    33
+ 88 kPa      18    22    24    26    28    30    32    34    35    35    35    35    35    34
+ 80 kPa      18    24    26    28    30    32    34    35    36    36    36    36    36    35
+ 74 kPa      18    26    28    30    32    33    35    36    37    37    37    37    37    36
+ 66 kPa      18    28    30    32    33    34    36    37    38    38    38    38    38    37
+ 56 kPa      18    30    32    33    34    35    37    38    39    39    39    39    39    38
+ 50 kPa      18    30    32    34    35    36    38    39    40    40    40    40    40    39
+ 46 kPa      18    30    32    34    36    37    39    40    40    40    40    40    40    40
+ 40 kPa      18    30    32    34    36    38    40    40    40    40    40    40    40    40
+ 36 kPa      18    30    34    36    37    39    40    40    40    40    40    40    40    40
+ 30 kPa      18    32    34    36    38    40    40    40    40    40    40    40    40    40
+ 26 kPa      18    32    34    36    38    40    40    40    40    40    40    40    40    40
+ 20 kPa      18    32    34    36    38    40    40    40    40    40    40    40    40    40
+ 16 kPa      18    32    34    36    38    40    40    40    40    40    40    40    40    40
+ 10 kPa      18    32    34    36    38    40    40    40    40    40    40    40    40    40
+
+KEY FEATURES (95 RON):
+- Idle: 18° (factory spec)
+- WOT (100 kPa): 32-33° (+4° more than 91 RON)
+- Light load: Up to 40° (excellent economy)
+- Better power across entire RPM range
+- Safe for continuous use with quality 95 RON
+
+
+TABLE 3: FOR 98 RON (Super Premium) - MAXIMUM PERFORMANCE
+==========================================================
+Use this only with 98+ octane fuel. Test for knock before daily use!
+
+Load/MAP    500   1000  1500  2000  2500  3000  3500  4000  4500  5000  5500  6000  6500  7000
+---------  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----  ----
+100 kPa      14    20    22    24    26    28    30    32    34    35    35    35    35    34
+ 96 kPa      16    22    24    26    28    30    32    34    36    36    36    36    36    35
+ 88 kPa      18    24    26    28    30    32    34    36    37    37    37    37    37    36
+ 80 kPa      18    26    28    30    32    34    36    37    38    38    38    38    38    37
+ 74 kPa      18    28    30    32    34    35    37    38    39    39    39    39    39    38
+ 66 kPa      18    30    32    34    35    36    38    39    40    40    40    40    40    39
+ 56 kPa      18    32    34    35    36    37    39    40    41    41    41    41    41    40
+ 50 kPa      18    32    34    36    37    38    40    41    42    42    42    42    42    41
+ 46 kPa      18    32    34    36    38    39    41    42    42    42    42    42    42    42
+ 40 kPa      18    32    34    36    38    40    42    42    42    42    42    42    42    42
+ 36 kPa      18    32    36    38    39    41    42    42    42    42    42    42    42    42
+ 30 kPa      18    34    36    38    40    42    42    42    42    42    42    42    42    42
+ 26 kPa      18    34    36    38    40    42    42    42    42    42    42    42    42    42
+ 20 kPa      18    34    36    38    40    42    42    42    42    42    42    42    42    42
+ 16 kPa      18    34    36    38    40    42    42    42    42    42    42    42    42    42
+ 10 kPa      18    34    36    38    40    42    42    42    42    42    42    42    42    42
+
+KEY FEATURES (98 RON):
+- Idle: 18° (factory spec)
+- WOT (100 kPa): 34-35° (+6° more than 91 RON)
+- Light load: Up to 42° (maximum economy)
+- Maximum power potential
+- MUST test for knock before using!
+
+
+WHICH TABLE SHOULD YOU USE?
+============================
+
+START HERE (91 RON):
+- If you don't know your fuel octane
+- If you hear any knock/ping with current settings
+- If using cheap gas station fuel
+- For break-in period (first 1000 km)
+
+UPGRADE TO 95 RON IF:
+- You use branded 95 octane fuel consistently
+- No knock detected with 91 RON table
+- Want better fuel economy
+- Want more power
+- Most recommended for daily use in Europe
+
+UPGRADE TO 98 RON IF:
+- You use Shell V-Power, BP Ultimate, or similar 98+ RON
+- Race/track use
+- Want maximum performance
+- Willing to pay for premium fuel
+- Have tested for knock and found none
+
+
+HOW TO ENTER THE TABLE IN TUNERSTUDIO:
+=======================================
+
+1. Open TunerStudio
+2. Menu: Tuning → Spark Table
+3. Click on each cell and type the new value
+4. OR: Use copy/paste if TunerStudio supports it
+5. Click "Burn" to save to Speeduino
+6. Test drive and listen for knock!
+
+
+KNOCK DETECTION:
+================
+
+What knock sounds like:
+- Metallic rattling/pinging sound
+- Like marbles in a can
+- Occurs under load (acceleration, uphill)
+- More noticeable at 2000-3000 RPM under load
+
+If you hear knock:
+1. IMMEDIATELY reduce throttle
+2. Go back to previous (safer) timing table
+3. Or reduce advance by 2-4° in the knock area
+4. Test again
+
+Knock can damage your engine! When in doubt, use less advance.
+
+
+TUNING PROCEDURE:
+=================
+
+STEP 1: Start with 91 RON table
+- Enter the table in TunerStudio
+- Burn to ECU
+- Test drive gently
+
+STEP 2: Test for knock
+- Drive in various conditions:
+  * City (part throttle)
+  * Highway (cruise)
+  * Uphill (heavy load)
+  * Acceleration (WOT)
+- Listen carefully for knock
+
+STEP 3: If NO knock detected
+- Advance to 95 RON table
+- Repeat testing
+
+STEP 4: If knock detected
+- Stay with current table OR
+- Reduce advance in problem areas by 2°
+
+STEP 5: Fine-tune specific areas
+- If knock only at WOT: Reduce 100 kPa row by 2-4°
+- If knock at cruise: Reduce 50-66 kPa rows by 2°
+- If knock everywhere: Go back to previous table
+
+
+COMPARISON TO YOUR CURRENT TABLE:
+==================================
+
+Your current table is between 91 and 95 RON:
+- Good WOT timing (conservative)
+- Low idle timing (14-17° vs factory 18°)
+- Good high-load protection
+
+Recommended changes:
+1. Use 95 RON table if you use premium fuel
+2. Increase idle timing to 18° (all tables)
+3. Test for knock before committing
+
+
+FUEL OCTANE REFERENCE:
+======================
+
+Europe (RON):
+- 91 RON = Regular
+- 95 RON = Premium (most common)
+- 98 RON = Super Premium
+- 100+ RON = Race fuel
+
+USA (AKI = (RON+MON)/2):
+- 87 AKI ≈ 91 RON
+- 91 AKI ≈ 95 RON
+- 93 AKI ≈ 98 RON
+
+Your DT engine (9.0:1 compression) is designed for 91 RON minimum.
+95 RON is optimal for performance and economy.
+98 RON is overkill but safe if available.
+
+
+SUMMARY:
+========
+
+✓ 91 RON table: Safe baseline, use if uncertain
+✓ 95 RON table: RECOMMENDED for daily use with premium fuel
+✓ 98 RON table: Maximum performance, test carefully
+
+All tables have 18° at idle (matching factory spec).
+Start conservative, advance timing only if no knock detected.
+Your engine will thank you!

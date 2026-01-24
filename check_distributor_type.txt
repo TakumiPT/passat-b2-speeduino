@@ -1,0 +1,38 @@
+JP GROUP 1191100100 Analysis:
+
+From auto-doc.pt specifications:
+- Type: Electronic distributor with Hall sensor
+- For: VW engines 1.6L/1.8L (1983-1992)
+- OEM: 026905205AG, 027905205S, 027905205H, 027905205R
+- Feature: "with vacuum regulator" (com regulador de vácuo)
+
+Key question: Does it have CENTRIFUGAL advance?
+
+Hall sensor distributors for VW ABU engines typically come in variants:
+1. Hall sensor ONLY (fully electronic, no mechanical advance) - rare
+2. Hall sensor + Vacuum advance (most common)
+3. Hall sensor + Vacuum + Centrifugal (older design)
+
+The JP GROUP listing says "with vacuum regulator" but does NOT mention centrifugal.
+Modern Hall sensor distributors (1990s+) typically eliminated centrifugal weights.
+
+For VW ABU 1.6L (1994-1999):
+- Factory used electronic control units (ECU) for timing
+- Distributors were simplified to Hall sensor + vacuum only
+- Centrifugal advance was phased out in favor of ECU control
+
+Conclusion: JP GROUP 1191100100 likely has:
+✓ Hall sensor (confirmed)
+✓ Vacuum advance (confirmed in listing)
+? Centrifugal advance (UNLIKELY - not mentioned, modern design)
+
+If it DOES have centrifugal:
+- Springs/weights inside distributor body
+- Adds 0-15° advance based on RPM
+- Would interfere with Speeduino timing control
+- BAD for Option 1 (even with vacuum disconnected)
+
+If it does NOT have centrifugal:
+- Only vacuum advance to worry about
+- Disconnecting vacuum = fully static distributor
+- GOOD for Option 1 (works like NTY)

@@ -1,0 +1,194 @@
+================================================================================
+CLOSED LOOP IAC CONFIGURATION FIX
+================================================================================
+Date: November 19, 2025
+Issue: Current settings exceed physical stepper motor limits (165 steps max)
+Risk: Motor damage, control failure, potential overheating
+
+================================================================================
+CHANGES REQUIRED IN TUNERSTUDIO
+================================================================================
+
+1. IAC STEPPER MOTOR - CLOSED LOOP IDLE SETTINGS
+   -----------------------------------------------
+   
+   ❌ WRONG (Current):
+      Minimum valve value: 270 steps
+      Maximum valve value: 720 steps
+   
+   ✓ CORRECT (Fix):
+      Minimum valve value: 90 steps
+      Maximum valve value: 162 steps
+
+
+2. IAC STEPPER MOTOR - CRANKING TABLE
+   -----------------------------------
+   
+   ❌ WRONG (Current):
+      At 79°C: 180 steps
+   
+   ✓ CORRECT (Fix):
+      At 79°C: 165 steps
+
+
+3. ACCELERATION ENRICHMENT - TPS BASED AE
+   ----------------------------------------
+   
+   ❌ WRONG (Current):
+      TPS DOT (%/s):  70    220    430    790
+      Added (%):      40     75    120    140
+   
+   ✓ CORRECT (Fix):
+      TPS DOT (%/s):  70    220    430    790
+      Added (%):      55    105    165    190
+
+================================================================================
+WHY THESE VALUES ARE CORRECT
+================================================================================
+
+MINIMUM VALVE VALUE: 90 steps
+------------------------------
+Why 270 is WRONG:
+• Your stepper motor physical limit is 165 steps
+• 270 steps is IMPOSSIBLE - motor will jam trying to reach it
+• PID controller thinks it has range it doesn't actually have
+
+Why 90 is CORRECT:
+• Stepper is INVERTED (higher steps = closes valve, lower steps = opens valve)
+• 90 steps = valve MORE OPEN = allows MORE air
+• When idle RPM too LOW, PID can reduce steps to 90 to increase airflow
+• Safely within physical limit (90 < 165)
+• Provides good working range (72 steps total: 162 - 90 = 72)
+
+Physical meaning:
+   90 steps  → Valve wide open → Maximum airflow → Raises idle RPM
+   130 steps → Valve half open → Medium airflow → Normal idle
+   162 steps → Valve nearly closed → Minimum airflow → Lowers idle RPM
+
+
+MAXIMUM VALVE VALUE: 162 steps
+-------------------------------
+Why 720 is CATASTROPHIC:
+• Physical limit is 165 steps
+• 720 steps is 4.4x beyond physical capability
+• Motor will burn out trying to reach impossible position
+• Stepper will jam, overheat, potentially break
+• WILL DAMAGE YOUR MOTOR if you burn this setting
+
+Why 162 is CORRECT:
+• Stays safely within 165 step physical limit
+• Leaves 3-step safety margin (165 - 162 = 3)
+• 162 steps = valve nearly CLOSED (inverted stepper)
+• When idle RPM too HIGH, PID can increase steps to 162 to restrict airflow
+• Maximum restriction without hitting physical stop
+
+Safety margin explained:
+   165 steps = ABSOLUTE PHYSICAL LIMIT (home position, fully closed)
+   162 steps = SAFE MAXIMUM (prevents jamming at limit)
+   3 steps   = SAFETY BUFFER (protects motor from damage)
+
+
+IAC CRANKING AT 79°C: 165 steps
+--------------------------------
+Why 180 is WRONG:
+• Exceeds physical limit by 15 steps (180 - 165 = 15)
+• When engine is warm (79°C), stepper tries to go beyond capability
+• Motor jams at 165 trying to reach 180
+
+Why 165 is CORRECT:
+• Matches physical limit exactly
+• At warm temperatures, engine needs less air
+• 165 steps = fully closed valve = appropriate for warm start
+• No risk of exceeding capability
+
+
+ACCELERATION ENRICHMENT: 55, 105, 165, 190
+-------------------------------------------
+Why 40, 75, 120, 140 is WRONG:
+• Your log showed AFR 16.60:1 during fast acceleration (t=4.94s)
+• Target AFR: 13.5:1 for safe acceleration
+• Fuel shortage: 16.60 ÷ 13.5 = 1.229 (22.9% too lean)
+• CAUSES INTAKE BACKFIRES (exactly what you experienced)
+
+Why 55, 105, 165, 190 is CORRECT:
+• Increases all values by ~37.7% average
+• At 790 %/s TPS DOT: 140% → 190% (+35.7% increase)
+• Mathematical prediction: AFR 16.60 → 12.23:1 (SAFE)
+• Eliminates lean condition that caused backfires
+• Provides safety margin for varying conditions
+
+Calculation proof:
+   Observed: TPS DOT 795%/s → AE 240% → AFR 16.60:1 (LEAN)
+   Required fuel: 16.60 ÷ 13.5 = 1.229x more fuel needed
+   New AE: 140% × 1.229 = 172% minimum
+   Safety margin: 172% → 190% (allows for variation)
+   Predicted AFR: 16.60 ÷ 1.357 = 12.23:1 (PERFECT)
+
+All 4 bins scaled proportionally:
+   70 %/s:  40 → 55  (+37.5% increase)
+   220 %/s: 75 → 105 (+40.0% increase)
+   430 %/s: 120 → 165 (+37.5% increase)
+   790 %/s: 140 → 190 (+35.7% increase)
+
+================================================================================
+SUMMARY: WHAT EACH FIX DOES
+================================================================================
+
+FIX #1: Minimum valve 270 → 90
+   Prevents: Motor jam, control failure
+   Enables: PID can actually OPEN valve to raise idle
+   Result: Closed loop control will work properly
+
+FIX #2: Maximum valve 720 → 162
+   Prevents: MOTOR DAMAGE, overheating, physical destruction
+   Enables: PID can CLOSE valve to lower idle safely
+   Result: Motor stays within physical capability
+
+FIX #3: Cranking 79°C 180 → 165
+   Prevents: Warm start motor jam
+   Enables: Safe warm cranking operation
+   Result: No excessive air during warm starts
+
+FIX #4: AE values to 55, 105, 165, 190
+   Prevents: INTAKE BACKFIRES, lean damage, power loss
+   Enables: Safe fuel delivery during hard acceleration
+   Result: AFR stays 12-13:1 during fast throttle opening
+
+================================================================================
+IMPLEMENTATION CHECKLIST
+================================================================================
+
+□ 1. Open TunerStudio
+□ 2. Go to: IAC Stepper Motor → Idle - Closed Loop Settings
+□ 3. Change Minimum valve value: 270 → 90
+□ 4. Change Maximum valve value: 720 → 162
+□ 5. Go to: IAC Stepper Motor → Cranking Table
+□ 6. Change 79°C row: 180 → 165
+□ 7. Go to: Acceleration Enrichment → TPS Based AE
+□ 8. Change Added values to: 55, 105, 165, 190
+□ 9. BURN TO ECU (critical - changes won't take effect until burned)
+□ 10. Test drive with hard accelerations
+□ 11. Record new MLG log (15-30 seconds)
+□ 12. Send log for verification
+
+================================================================================
+EXPECTED RESULTS AFTER FIX
+================================================================================
+
+✓ No more intake backfires during hard acceleration
+✓ AFR stays 12-13:1 during fast throttle opening (was 16.6)
+✓ Idle RPM stable with closed loop PID control
+✓ Stepper motor operates safely within 90-162 step range
+✓ Warm cranking works without motor jam
+✓ Engine responsive to throttle without lean hesitation
+
+================================================================================
+CRITICAL WARNING
+================================================================================
+
+⚠️  DO NOT START ENGINE WITH CURRENT CLOSED LOOP SETTINGS (720 max)
+⚠️  MOTOR WILL BE DAMAGED
+⚠️  FIX ALL VALUES BEFORE BURNING TO ECU
+⚠️  VERIFY SETTINGS IN TUNERSTUDIO BEFORE BURNING
+
+================================================================================

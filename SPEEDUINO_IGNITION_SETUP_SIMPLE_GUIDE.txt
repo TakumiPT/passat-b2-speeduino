@@ -1,0 +1,408 @@
+SPEEDUINO IGNITION SETUP - SIMPLE GUIDE FOR VW DT ENGINE
+========================================================================
+
+YOUR ENGINE: VW 1.6L DT with DISTRIBUTOR (mechanical advance disconnected)
+GOAL: Make Speeduino control ignition timing instead of distributor
+
+========================================================================
+CURRENT STATUS (what you have now):
+========================================================================
+
+✓ Fuel control: WORKING (Speeduino controls injector)
+✗ Ignition control: NOT WORKING (distributor still controls timing)
+
+Your current settings:
+- Trigger Pattern: "Basic Distributor" ✓ CORRECT
+- Spark Mode: "Wasted Spark" ✗ WRONG (should be "Single Channel")
+
+========================================================================
+WHAT YOU NEED TO DO - 3 SIMPLE STEPS:
+========================================================================
+
+STEP 1: CHANGE SPARK MODE IN TUNERSTUDIO
+=========================================
+
+1. Open TunerStudio
+2. Go to: **Spark Settings** tab
+3. Find: "Spark Output Mode"
+4. Change from: "Wasted Spark"
+5. Change to: **"Single Channel"**
+
+WHY?
+- Your engine has a DISTRIBUTOR (one coil)
+- Single Channel = all spark signals go to IGN1 output
+- Distributor then distributes spark to each cylinder
+- This is the correct mode for distributor engines
+
+------------------------------------------------------------------------
+
+STEP 2: WIRE SPEEDUINO IGN1 TO IGNITION MODULE
+===============================================
+
+CURRENT WIRING (distributor controls timing):
+----------------------------------------------
+Distributor signal → Ignition module → Coil
+
+NEW WIRING (Speeduino controls timing):
+----------------------------------------
+Speeduino IGN1 → Ignition module → Coil
+
+PHYSICAL STEPS:
+
+a) LOCATE THE WIRES:
+   - Speeduino board: Find "IGN1" output pin
+   - Ignition module: Find signal input wire (usually from distributor)
+
+b) DISCONNECT OLD SIGNAL:
+   - Unplug wire from distributor to ignition module
+   - This wire was telling module WHEN to fire
+   - We want Speeduino to control this now
+
+c) CONNECT SPEEDUINO:
+   - Wire from Speeduino IGN1 → Ignition module signal input
+   - Use same connection point where distributor signal was
+   - Make sure ground is common (Speeduino GND = Engine GND)
+
+d) TAPE UP OLD DISTRIBUTOR WIRE:
+   - The disconnected distributor signal wire
+   - Insulate it so it doesn't short
+   - You might reconnect it later if testing
+
+IMPORTANT - DISTRIBUTOR STILL NEEDED!
+--------------------------------------
+✓ Distributor MECHANICAL PART stays connected
+✓ It still DISTRIBUTES spark to each cylinder
+✓ Only the TIMING SIGNAL is now from Speeduino
+✗ Do NOT remove distributor from engine!
+
+------------------------------------------------------------------------
+
+STEP 3: SET TRIGGER ANGLE WITH TIMING LIGHT
+============================================
+
+This is CRITICAL - tells Speeduino where piston #1 is!
+
+WHAT YOU NEED:
+--------------
+- Timing light (strobe light for timing)
+- Socket wrench to rotate engine
+- Helper (makes it easier)
+
+PROCEDURE:
+
+a) PREPARE ENGINE:
+   1. Mark the timing marks on crankshaft pulley
+   2. Factory mark should be at 18° BTDC for idle
+   3. Make sure you can see timing marks clearly
+
+b) IN TUNERSTUDIO - FIX TIMING TO 18°:
+   1. Go to: Spark Settings
+   2. Find: "Fixed Angle"
+   3. Set to: **18** (degrees)
+   4. This locks timing to 18° for testing
+   5. Burn to ECU
+
+c) START ENGINE (will run on fixed 18° timing):
+   1. Start engine and let it idle
+   2. Timing is now locked at 18° BTDC
+   3. Should idle relatively normally
+
+d) USE TIMING LIGHT:
+   1. Connect timing light to cylinder #1 spark plug wire
+   2. Point light at timing marks on crankshaft pulley
+   3. Engine running, you'll see timing mark "frozen" by strobe
+
+e) READ THE TIMING MARK:
+   Question: Does the timing mark show 18° BTDC?
+   
+   **IF YES (mark at 18°):**
+   → Your Trigger Angle is correct! (probably 0° or factory setting)
+   → Skip to Step f)
+   
+   **IF NO (mark shows different angle, e.g., 10° or 25°):**
+   → You need to adjust "Trigger Angle" in TunerStudio
+   
+   Example:
+   - Speeduino set to 18°
+   - Timing light shows 25°
+   - Difference = 25 - 18 = 7° too advanced
+   - New Trigger Angle = Current + 7°
+   
+   Or:
+   - Speeduino set to 18°
+   - Timing light shows 10°
+   - Difference = 18 - 10 = 8° too retarded
+   - New Trigger Angle = Current - 8°
+
+f) ADJUST TRIGGER ANGLE (if needed):
+   1. Stop engine
+   2. In TunerStudio → Trigger Setup
+   3. Find: "Trigger Angle"
+   4. Adjust by the difference you measured
+   5. Burn to ECU
+   6. Restart engine
+   7. Check timing light again
+   8. Repeat until timing mark shows exactly 18°
+
+g) REMOVE FIXED TIMING:
+   1. Once timing light shows perfect 18°
+   2. Go to: Spark Settings → Fixed Angle
+   3. Change from: 18
+   4. Change to: **0** (normal operation)
+   5. Burn to ECU
+   6. Now Speeduino controls timing from the advance table!
+
+------------------------------------------------------------------------
+
+STEP 4: TEST DRIVE AND VERIFY
+==============================
+
+a) IDLE TEST:
+   - Engine should idle at ~18° (your ignition table setting)
+   - Use timing light to verify
+   - Should be smooth, no difference from before
+
+b) REV TEST:
+   - Gently rev engine to 2000 RPM
+   - Timing should advance to ~32-34° (from your table)
+   - Timing light will show this
+   - Should rev smoothly
+
+c) ROAD TEST:
+   - Drive gently at first
+   - No pinging/knocking sound (if you hear pinging, reduce timing!)
+   - Should feel normal power
+   - Monitor for any misfires
+
+========================================================================
+SAFETY CHECKS:
+========================================================================
+
+BEFORE STARTING ENGINE FIRST TIME:
+-----------------------------------
+1. ✓ Spark mode set to "Single Channel"
+2. ✓ Fixed angle set to 18° for initial test
+3. ✓ IGN1 wired to ignition module
+4. ✓ Distributor still mechanically connected
+5. ✓ All grounds are common (Speeduino GND = Engine GND)
+
+IF ENGINE WON'T START:
+-----------------------
+1. Check spark with timing light - is there spark?
+2. If NO spark:
+   - Check IGN1 connection
+   - Check ignition module ground
+   - Check Speeduino power
+3. If YES spark but won't start:
+   - Trigger angle might be WAY off
+   - Try adjusting ±20° in trigger angle
+   - Check trigger pattern is correct
+
+IF ENGINE RUNS BUT POORLY:
+---------------------------
+1. Rough idle:
+   - Timing might be off
+   - Adjust trigger angle
+   - Use timing light to verify
+
+2. No power / hesitation:
+   - Check ignition advance table values
+   - Make sure Fixed Angle is set to 0 (not locked)
+
+3. Pinging/knocking:
+   - STOP ENGINE immediately
+   - Reduce timing in advance table by 2-4°
+   - Your 95 RON fuel should handle 18° idle, 40° max
+
+========================================================================
+TUNERSTUDIO SETTINGS SUMMARY:
+========================================================================
+
+TRIGGER SETUP TAB:
+------------------
+Trigger Pattern: "Basic Distributor" (already correct)
+Trigger Angle: 0° (adjust with timing light later)
+Skip Revolutions: 1 or 2
+Trigger Edge: RISING (or as currently set)
+
+SPARK SETTINGS TAB:
+-------------------
+Spark Output Mode: **"Single Channel"** ← CHANGE THIS!
+Cranking Advance: 12° BTDC
+Fixed Angle: 18° (for setup), then 0° (for normal use)
+Spark Output Triggers: "GOING LOW" (most common)
+
+ADVANCE TABLE (already good):
+------------------------------
+Idle (600-1000 RPM, low load): 18°
+Cruise (2000-3000 RPM, medium load): 30-34°
+WOT (high load): 32-40°
+
+========================================================================
+SIMPLE TROUBLESHOOTING:
+========================================================================
+
+PROBLEM: No spark at all
+FIX: 
+  - Check IGN1 connection
+  - Verify ignition module has power
+  - Check ground connections
+
+PROBLEM: Engine starts but runs rough
+FIX:
+  - Adjust trigger angle with timing light
+  - Make sure Fixed Angle = 0 for normal running
+
+PROBLEM: Pinging/knocking sound
+FIX:
+  - STOP engine immediately
+  - Reduce timing by 2-4° in advance table
+  - Use lower octane timing values
+
+PROBLEM: Engine won't rev past 3000 RPM
+FIX:
+  - Check advance table has proper values
+  - Make sure Fixed Angle = 0
+
+PROBLEM: Timing light shows wrong angle
+FIX:
+  - Adjust "Trigger Angle" in Trigger Setup
+  - Add degrees if timing is too retarded
+  - Subtract degrees if timing is too advanced
+
+========================================================================
+EXPECTED RESULTS AFTER SETUP:
+========================================================================
+
+BEFORE (distributor controlled):
+---------------------------------
+- Timing advances mechanically with RPM
+- Vacuum advance affects timing
+- Cannot tune timing electronically
+- Fixed advance curve
+
+AFTER (Speeduino controlled):
+------------------------------
+✓ Timing controlled by advance table
+✓ Can adjust timing for any RPM/load point
+✓ Optimized timing for 95 RON fuel
+✓ Better fuel economy
+✓ Better power
+✓ Can log actual timing advance
+✓ Safety features (knock detection possible)
+
+========================================================================
+IMPORTANT NOTES:
+========================================================================
+
+1. DISTRIBUTOR IS STILL NEEDED:
+   - It distributes spark to correct cylinder
+   - Only TIMING is now electronic
+   - Do NOT remove distributor!
+
+2. VACUUM ADVANCE DISABLED:
+   - Disconnect vacuum line to distributor
+   - Speeduino handles load-based timing
+   - Plug vacuum port with bolt/cap
+
+3. MECHANICAL ADVANCE LOCKED:
+   - Remove mechanical advance springs if possible
+   - Or lock distributor at minimum advance
+   - Prevents fighting with Speeduino timing
+
+4. START WITH CONSERVATIVE TIMING:
+   - Your current table is good (18-40°)
+   - Don't exceed 40° until you've tested
+   - Listen for any pinging/knocking
+
+5. TIMING LIGHT IS MANDATORY:
+   - Cannot set up without timing light
+   - Need to verify trigger angle
+   - Borrow one if you don't have
+
+========================================================================
+WHAT TO EXPECT DURING FIRST START:
+========================================================================
+
+FIRST ATTEMPT (Fixed timing at 18°):
+------------------------------------
+- Should start normally (maybe slightly harder)
+- Will idle at fixed 18° timing
+- Won't rev smoothly (timing doesn't advance)
+- THIS IS NORMAL - it's for calibration only
+
+AFTER TRIGGER ANGLE SET CORRECTLY:
+-----------------------------------
+- Set Fixed Angle back to 0
+- Engine uses advance table
+- Should start normally
+- Idles smoothly at 18°
+- Revs cleanly with advancing timing
+- Ready for road test
+
+DURING ROAD TEST:
+------------------
+- Acceleration should feel normal or better
+- No pinging (if you hear pinging, reduce timing!)
+- Timing advances smoothly with RPM/load
+- Can log actual timing in TunerStudio
+
+========================================================================
+FINAL CHECKLIST BEFORE FIRST START:
+========================================================================
+
+TUNERSTUDIO:
+□ Spark Mode = "Single Channel"
+□ Fixed Angle = 18° (for first test)
+□ Cranking Advance = 12°
+□ Advance table has reasonable values (18-40°)
+□ Burn settings to ECU
+
+WIRING:
+□ Speeduino IGN1 connected to ignition module signal
+□ Old distributor signal wire disconnected and insulated
+□ Distributor still mechanically connected
+□ All grounds common
+
+MECHANICAL:
+□ Vacuum advance disconnected
+□ Mechanical advance locked (if possible)
+□ Timing marks visible on crankshaft pulley
+□ Timing light ready
+
+SAFETY:
+□ Fire extinguisher nearby (just in case!)
+□ Helper available
+□ Clear area around engine
+□ Battery fully charged
+
+========================================================================
+QUESTIONS TO ASK IF YOU GET STUCK:
+========================================================================
+
+1. "Does the timing light show spark?"
+   → If NO: Wiring problem
+   → If YES: Timing calibration needed
+
+2. "What angle does the timing light show?"
+   → Compare to Fixed Angle setting
+   → Adjust Trigger Angle to match
+
+3. "Does engine run better at different Fixed Angle?"
+   → Try 15°, 18°, 20° to find best idle
+   → This helps find correct base timing
+
+4. "Can you log ignition advance in TunerStudio?"
+   → If YES: Speeduino is controlling timing ✓
+   → If NO: Check Spark Mode setting
+
+========================================================================
+YOU GOT THIS! TAKE IT STEP BY STEP!
+========================================================================
+
+The hardest part is setting the Trigger Angle with timing light.
+Everything else is just following the steps above.
+
+Good luck! Report back what happens when you test!
+
+========================================================================

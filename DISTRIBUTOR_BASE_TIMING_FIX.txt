@@ -1,0 +1,376 @@
+DISTRIBUTOR BASE TIMING ADJUSTMENT - MECHANICAL FIX
+VW PASSAT B2 1984 - 1.6L ENGINE CODE DT
+Current Problem: Engine backfires during cold start cranking
+Root Cause: Distributor base timing position incorrect
+================================================================================
+
+CURRENT SITUATION:
+------------------
+- Fuel system: Working (Gol G2 monopoint + Speeduino fuel control) ✓
+- Ignition: Still mechanical (factory Bosch Module 124 + distributor)
+- Problem: Backfires during cranking = timing too advanced or retarded
+- Symptom: Powder/burnt smell = combustion happening at wrong piston position
+
+FACTORY SPECIFICATION (from Haynes Manual):
+-------------------------------------------
+Target timing: 18° ± 1° BTDC at 700-800 RPM
+Timing check method: WITH vacuum hose connected
+Spark plugs: NGK BP6-E
+Spark gap: 0.6-0.8 mm
+Coil type: 12V transistorized (Bosch Module 124)
+
+TOMORROW'S PLAN - MECHANICAL TIMING FIX:
+========================================
+
+STEP 1: VERIFY CURRENT BASE TIMING WITH TIMING LIGHT
+-----------------------------------------------------
+
+Tools needed:
+✓ Timing light (inductive pickup type)
+✓ 10mm wrench (for distributor clamp bolt)
+✓ Flashlight
+✓ Vacuum caps (if disconnecting vacuum)
+
+Procedure:
+
+1. Warm up engine to normal operating temperature
+   - Let idle for 5-10 minutes
+   - Coolant temp: 80-90°C
+
+2. Connect timing light:
+   - Red clamp → battery positive (+)
+   - Black clamp → battery negative (-)
+   - Inductive pickup → cylinder #1 spark plug wire
+   
+   Cylinder #1 location: At timing belt end (firing order 1-3-4-2)
+
+3. Locate timing marks on crankshaft pulley:
+   - Usually stamped on pulley rim
+   - Pointer/marker on engine block
+   - Marks: 0°, 5°, 10°, 15°, 20° BTDC (sometimes color-coded)
+
+4. Point timing light at pulley while engine idling (700-800 RPM)
+
+5. Read current timing:
+   
+   FACTORY METHOD (Haynes - vacuum CONNECTED):
+   - Keep vacuum hose attached to distributor
+   - Should read: 18° ± 1° BTDC
+   - If correct (17-19° BTDC) → Timing is GOOD! ✓
+   - If wrong → Need to adjust (STEP 2)
+
+   ALTERNATIVE METHOD (vacuum DISCONNECTED):
+   - Unplug vacuum hose from distributor
+   - Plug hose end with vacuum cap
+   - Should read: ~10° BTDC (base timing only)
+   - If 10° ± 2° BTDC → Base timing correct ✓
+   - If wrong → Need to adjust (STEP 2)
+
+6. Note the reading:
+   Example: "Timing light shows 78° BTDC" = WAY TOO ADVANCED!
+   Example: "Timing light shows 5° BTDC" = TOO RETARDED
+
+
+STEP 2: ADJUST DISTRIBUTOR BASE TIMING
+---------------------------------------
+
+IF TIMING IS WRONG (not 18° BTDC with vacuum connected):
+
+Safety:
+- Parking brake ON
+- Transmission in Neutral
+- Engine running at idle (700-800 RPM)
+
+Adjustment procedure:
+
+1. Locate distributor clamp bolt:
+   - At base of distributor body
+   - 10mm bolt holding distributor to engine block
+   
+2. Loosen clamp bolt:
+   - Turn counterclockwise 2-3 turns
+   - Do NOT remove completely!
+   - Distributor should rotate freely now
+
+3. Rotate distributor body:
+   - Watch timing marks with timing light while rotating
+   - Clockwise rotation = RETARDS timing (less advance)
+   - Counterclockwise rotation = ADVANCES timing (more advance)
+   
+   IF CURRENT TIMING TOO ADVANCED (more than 19° BTDC):
+   → Rotate distributor CLOCKWISE until timing reads 18° BTDC
+   
+   IF CURRENT TIMING TOO RETARDED (less than 17° BTDC):
+   → Rotate distributor COUNTERCLOCKWISE until timing reads 18° BTDC
+
+4. Fine-tune:
+   - Make small adjustments
+   - Watch timing marks move
+   - Target: Exactly 18° BTDC (or as close as possible within 17-19°)
+
+5. Tighten clamp bolt:
+   - Hold distributor in position
+   - Tighten 10mm bolt securely
+   - Check timing again to verify it didn't move
+
+6. Verify final timing:
+   - Should read 18° ± 1° BTDC with vacuum connected
+   - Rev engine to 2000 RPM → should advance to ~28-32° BTDC (centrifugal + vacuum working)
+
+7. If timing is now correct → Test cold start (STEP 3)
+
+
+STEP 3: TEST COLD START AFTER TIMING ADJUSTMENT
+------------------------------------------------
+
+After distributor timing is set to 18° BTDC:
+
+1. Let engine cool down:
+   - Turn off engine
+   - Wait 30-60 minutes
+   - Target coolant temp: 15-20°C (similar to previous failed tests)
+
+2. Battery check:
+   - Voltage: 12.6V minimum (fully charged)
+   - If low, charge battery first
+
+3. Start engine and observe:
+   
+   ✓ EXPECTED (if timing now correct):
+   - Engine fires in 15-30 seconds
+   - NO backfires during cranking
+   - NO powder/burnt smell
+   - Smooth catch and idle
+   - RPM stabilizes 700-800
+   
+   ✗ IF STILL BACKFIRES:
+   - Timing still wrong (recheck with timing light)
+   - OR spark plugs fouled (replace)
+   - OR ignition coil weak (test coil resistance)
+   - OR valve timing jumped (check timing belt)
+
+4. Log as teste8.mlg:
+   - Record entire cold start sequence
+   - Compare to previous failed tests (teste5, teste6, teste7)
+
+5. Analyze log:
+   - AFR should be rich (12-14) during warmup ✓
+   - RPM should be stable after start ✓
+   - No backfire events ✓
+
+
+DIAGNOSTIC CHART - INTERPRETING TIMING LIGHT READING:
+======================================================
+
+Reading with vacuum CONNECTED (Factory Haynes method):
+
+| Timing Light Shows | Diagnosis            | Action Required          |
+|--------------------|----------------------|--------------------------|
+| 17-19° BTDC        | CORRECT ✓            | No adjustment needed     |
+| 10-15° BTDC        | TOO RETARDED         | Rotate CCW ~3-5°         |
+| 5-10° BTDC         | WAY TOO RETARDED     | Rotate CCW ~8-10°        |
+| 20-25° BTDC        | TOO ADVANCED         | Rotate CW ~2-5°          |
+| 30-40° BTDC        | WAY TOO ADVANCED     | Rotate CW ~12-20°        |
+| 60-90° BTDC        | CRITICALLY WRONG     | Rotate CW ~42-72°        |
+
+Reading with vacuum DISCONNECTED (Base timing only):
+
+| Timing Light Shows | Diagnosis            | Action Required          |
+|--------------------|----------------------|--------------------------|
+| 8-12° BTDC         | BASE TIMING CORRECT  | Reconnect vacuum, done ✓ |
+| 5-8° BTDC          | SLIGHTLY RETARDED    | Rotate CCW ~2-4°         |
+| 0-5° BTDC          | TOO RETARDED         | Rotate CCW ~5-10°        |
+| 12-15° BTDC        | SLIGHTLY ADVANCED    | Rotate CW ~2-4°          |
+| 15-20° BTDC        | TOO ADVANCED         | Rotate CW ~5-8°          |
+
+
+UNDERSTANDING THE TWO TIMING CHECK METHODS:
+============================================
+
+METHOD 1: Vacuum CONNECTED (Factory Haynes method)
+---------------------------------------------------
+- Target: 18° BTDC at idle (700-800 RPM)
+- Vacuum hose: CONNECTED to distributor
+- What you're measuring: TOTAL timing (base + vacuum + centrifugal)
+- Why Haynes says this: Verifies complete ignition system working
+- Use this method: For final verification after adjustment
+
+Breakdown of 18° total:
+  Base timing: ~10° BTDC
+  Vacuum advance: ~8° (at idle vacuum)
+  Centrifugal: 0° (not active at idle)
+  = 18° BTDC total ✓
+
+METHOD 2: Vacuum DISCONNECTED (Professional method)
+----------------------------------------------------
+- Target: 8-12° BTDC at idle
+- Vacuum hose: DISCONNECTED and plugged
+- What you're measuring: BASE timing only (static distributor position)
+- Why professionals use this: Eliminates vacuum variation
+- Use this method: For precise base timing adjustment
+
+Breakdown with vacuum off:
+  Base timing: ~10° BTDC (what you adjust)
+  Vacuum advance: 0° (disconnected)
+  Centrifugal: 0° (not active at idle)
+  = 10° BTDC base ✓
+
+BOTH METHODS ARE CORRECT - just measuring different things!
+Result is same: Engine runs with proper total timing.
+
+
+WHAT IF TIMING IS MASSIVELY WRONG (60-90° off)?
+================================================
+
+This suggests distributor was installed incorrectly or rotor position wrong.
+
+CRITICAL CHECK - Distributor Rotor Position:
+
+1. Remove distributor cap (unclip 2-4 clips)
+
+2. Rotate crankshaft to TDC (Top Dead Center) cylinder #1:
+   - Turn crankshaft pulley until timing mark aligns with 0° (TDC)
+   - Both valves on cylinder #1 should be closed (rocker arms loose)
+
+3. Check rotor position:
+   - Rotor tip should point to cylinder #1 terminal in cap
+   - If rotor points elsewhere → distributor installed wrong!
+
+4. If distributor position wrong:
+   - Mark current position
+   - Loosen distributor clamp completely
+   - Lift distributor slightly
+   - Rotate shaft to correct position (rotor → cyl #1)
+   - Re-insert distributor
+   - Tighten clamp
+   - Recheck timing with timing light
+
+This is rare but possible if distributor was removed previously.
+
+
+NEXT STEPS DECISION TREE:
+==========================
+
+AFTER TOMORROW'S TIMING ADJUSTMENT:
+
+✓ IF ENGINE STARTS WITHOUT BACKFIRES:
+  → Mechanical timing fix worked! ✓
+  → Keep using mechanical ignition for now
+  → Optional future upgrade: Speeduino ignition control (better performance)
+  → Files ready: SPEEDUINO_IGNITION_SETUP_GUIDE.txt + ignition_table_95_RON.txt
+
+✗ IF ENGINE STILL BACKFIRES:
+  → Mechanical timing NOT the problem
+  → Possible causes:
+    - Spark plugs fouled/wrong gap (check 0.6-0.8mm)
+    - Ignition coil weak (test resistance: 0.52-0.76Ω primary, 2400-3500Ω secondary)
+    - Valve timing jumped (timing belt slipped)
+    - Fuel too rich during cranking (reduce cranking enrichment)
+  → Consider immediate upgrade to Speeduino ignition control (electronic fix)
+
+
+TOOLS SUMMARY FOR TOMORROW:
+============================
+
+Required:
+✓ Timing light (inductive pickup type) - ESSENTIAL!
+✓ 10mm wrench or socket (distributor clamp bolt)
+✓ Flashlight (to see timing marks)
+
+Optional but helpful:
+✓ Vacuum caps (if testing with vacuum disconnected)
+✓ Spark plug socket + gap tool (to check/replace plugs)
+✓ Multimeter (to test coil resistance if needed)
+✓ White paint marker (to mark timing position for visibility)
+
+
+SAFETY NOTES:
+=============
+
+⚠️ Engine is RUNNING during adjustment - be careful!
+⚠️ Keep hands/tools away from belts and pulleys
+⚠️ Don't touch spark plug wires while engine running (high voltage!)
+⚠️ Timing light strobe can be disorienting - don't stare continuously
+⚠️ Ensure parking brake engaged and transmission in neutral
+⚠️ Work in well-ventilated area (exhaust fumes)
+
+
+DOCUMENTATION FOR FUTURE SPEEDUINO IGNITION CONTROL:
+=====================================================
+
+Files ready for later implementation:
+
+1. SPEEDUINO_IGNITION_SETUP_GUIDE.txt
+   - Complete step-by-step configuration
+   - Updated with exact Haynes engine specs
+   - Trigger angle calibration procedure
+   - Troubleshooting guide
+
+2. ignition_table_95_RON.txt
+   - Optimized advance table for 95 RON fuel
+   - Tab-separated format (ready for Excel/TunerStudio import)
+   - Conservative WOT timing (32-34° BTDC)
+   - Economy cruise timing (38-40° BTDC)
+   - Scientifically calibrated for 9.0:1 compression
+
+3. IGNITION_TABLES_DT_ENGINE.txt
+   - Three complete tables: 91/95/98 RON
+   - Knock detection guide
+   - Tuning instructions
+
+Why Speeduino ignition control is better than mechanical:
+- Precise timing (±0.1° vs ±3° mechanical)
+- Optimized advance curves (economy + performance)
+- No distributor adjustment needed
+- Datalogging shows actual timing
+- Tunable from laptop
+- Better cold start (programmable cranking advance)
+- Rev limiter + launch control available
+
+When to upgrade to Speeduino ignition:
+- After mechanical timing fix proves inadequate
+- When you want better performance/economy
+- When you want modern ECU features
+- Anytime after mechanical system is stable
+
+
+EXPECTED OUTCOME TOMORROW:
+===========================
+
+BEST CASE:
+→ Timing light shows distributor at wrong angle (e.g., 5° or 90° instead of 18°)
+→ Adjust distributor to correct 18° BTDC
+→ Engine starts without backfires ✓
+→ Problem solved mechanically, Speeduino upgrade optional
+
+LIKELY CASE:
+→ Timing close but not perfect (e.g., 14° instead of 18°)
+→ Fine-tune to exact 18° BTDC
+→ Improvement but may still have minor issues
+→ Speeduino ignition control recommended for perfect operation
+
+WORST CASE:
+→ Timing already correct at 18° BTDC
+→ Backfire problem NOT caused by timing
+→ Need to check: spark plugs, coil, valve timing, or fuel richness
+→ Speeduino ignition control may be necessary solution
+
+
+SUMMARY - TOMORROW'S PROCEDURE:
+================================
+
+1. Connect timing light to cylinder #1 spark plug wire
+2. Start engine, let idle at 700-800 RPM
+3. Point timing light at crankshaft pulley
+4. Read current timing (target: 18° BTDC with vacuum connected)
+5. If wrong: Loosen distributor clamp, rotate to 18°, tighten
+6. Verify timing correct (17-19° BTDC acceptable)
+7. Test cold start - log as teste8.mlg
+8. Compare to previous failed tests (teste5/6/7)
+
+IF SUCCESSFUL → Keep mechanical ignition, upgrade to Speeduino later (optional)
+IF UNSUCCESSFUL → Investigate other causes OR implement Speeduino ignition immediately
+
+All documentation ready for Speeduino ignition control implementation when needed.
+
+Good luck tomorrow! 🔧⚙️

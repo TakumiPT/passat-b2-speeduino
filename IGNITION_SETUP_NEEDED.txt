@@ -1,0 +1,203 @@
+IGNITION TIMING CONFIGURATION ANALYSIS - Passat B4 1.6L ABU
+Golf 2 SPI 1.6L Brother Engine - Speeduino with Bosch Module 124
+=================================================================
+
+CURRENT CONFIGURATION (from CurrentTune.msq):
+---------------------------------------------
+
+✓ Trigger Pattern: "Basic Distributor" (correct for Hall sensor)
+✓ Spark Mode: "Wasted Spark" (correct for single coil + distributor)
+✓ Number of Cylinders: 4
+✓ Ignition enabled: YES (Speeduino IS controlling timing!)
+
+TIMING SETTINGS:
+----------------
+• CrankAng (Cranking timing): 5° BTDC
+• TrigAng (Trigger angle offset): 0° ← PROBLEM #1!
+• Ignition Algorithm: MAP-based
+• Dwell (cranking): 4.5ms
+• Dwell (running): 3.0ms
+
+ADVANCE TABLE (advTable1):
+--------------------------
+Running timing: 14-40° BTDC depending on RPM/MAP
+Idle (low RPM/low load): ~14-17° BTDC
+Mid-range: 23-28° BTDC  
+High load: 30-40° BTDC
+
+
+CRITICAL PROBLEMS IDENTIFIED:
+==============================
+
+PROBLEM #1: TRIGGER ANGLE NOT CALIBRATED
+-----------------------------------------
+Current: TrigAng = 0°
+
+This is the ROOT CAUSE of your backfiring!
+
+The TrigAng tells Speeduino WHERE cylinder #1 is in relation to the 
+Hall sensor signal. With TrigAng = 0°, Speeduino thinks the sensor 
+triggers at TDC, but your distributor likely triggers at a different 
+position (maybe 60° or 90° before TDC).
+
+Result: Speeduino fires spark at WRONG piston position!
+- Thinks it's firing at 5° BTDC during cranking
+- Actually firing at 65° BTDC (way too early!)
+- This causes INTAKE BACKFIRES
+
+
+PROBLEM #2: VACUUM ADVANCE INTERFERENCE
+----------------------------------------
+Your JP GROUP distributor has vacuum advance mechanism.
+
+When Speeduino commands 5° during cranking, the distributor can add:
+- Vacuum advance: 0-10° (depends on manifold vacuum)
+- Total timing becomes unpredictable
+
+During cranking, vacuum is high (closed throttle) so vacuum advance 
+adds extra degrees Speeduino doesn't know about!
+
+
+REQUIRED FIXES:
+===============
+
+FIX #1: CALIBRATE TRIGGER ANGLE (Critical - Must do first!)
+------------------------------------------------------------
+
+PROCEDURE:
+1. In TunerStudio, go to: Spark Settings → Trigger Settings
+2. Find "Trigger Angle" (TrigAng)
+3. Enable "Fixed Timing" mode (usually 10° or 15° BTDC)
+4. Start engine (will run rough at fixed timing)
+5. Use timing light on cylinder #1 spark plug wire
+6. Point timing light at crankshaft pulley timing marks
+7. Read actual timing on pulley (e.g., shows 35° but should be 15°)
+8. Calculate offset: Offset = Commanded - Actual
+   Example: 15° commanded - 35° actual = -20° offset
+9. Set TrigAng = offset value (e.g., TrigAng = -20)
+10. Re-check with timing light (should now match commanded timing)
+11. Disable fixed timing mode
+12. Restart - engine should run normally
+
+EXPECTED RESULT:
+- For VW ABU distributor, TrigAng typically -60° to -90°
+- This compensates for distributor rotor position
+- Speeduino will now fire spark at correct piston position
+
+
+FIX #2: DISABLE VACUUM ADVANCE (Critical for Speeduino control!)
+-----------------------------------------------------------------
+
+OPTION A: Disconnect vacuum line (Temporary test)
+- Locate vacuum line from intake manifold to distributor
+- Disconnect and plug both ends
+- Test start
+
+OPTION B: Remove vacuum advance mechanism (Permanent)
+- Remove distributor cap
+- Unscrew vacuum canister from distributor body
+- Leave linkage disconnected
+- Reinstall cap
+
+OPTION C: Buy NTY distributor without vacuum (€40)
+- No vacuum advance = cleaner Speeduino control
+- Plug and play replacement
+- Recommended for long-term solution
+
+
+FIX #3: ADJUST CRANKING TIMING (After fixing #1 and #2)
+--------------------------------------------------------
+
+Current: CrankAng = 5° BTDC
+
+For Golf 2 / Passat B4 1.6L ABU cold start:
+- Recommended: 10° BTDC during cranking
+- More advance helps cold combustion
+- Less likely to backfire than your current setup (once TrigAng fixed)
+
+Change to: CrankAng = 10° 
+
+NOTE: Only adjust this AFTER trigger angle is calibrated!
+
+
+FIX #4: VERIFY ADVANCE TABLE (Optional optimization)
+-----------------------------------------------------
+
+Your advance table looks reasonable for Golf 2 SPI:
+- Idle: 14-17° (good)
+- Cruise: 25-30° (good)  
+- WOT: 35-40° (aggressive but acceptable for stock engine)
+
+These values are ONLY used during running (RPM > 300).
+During cranking, only CrankAng (5°) is used.
+
+
+TESTING PROCEDURE AFTER FIXES:
+===============================
+
+STEP 1: Calibrate Trigger Angle
+- Use timing light method above
+- Verify timing matches commanded values
+- This is CRITICAL - don't skip!
+
+STEP 2: Disconnect Vacuum Advance
+- Unplug vacuum line
+- Plug hose ends
+
+STEP 3: Set Cranking Timing to 10° BTDC
+- Change CrankAng from 5 to 10
+- Save tune
+
+STEP 4: Test Cold Start
+- Temperature: 15°C or similar
+- Battery: Fully charged (12.6V)
+- Log as teste8.mlg
+- Expected: NO backfires, engine fires and runs smoothly
+
+STEP 5: If Still Backfires
+- Reduce cranking timing to 8° or 6°
+- Or check if timing light calibration was correct
+
+
+WHY THIS MATTERS FOR GOLF 2 SPI / PASSAT B4:
+=============================================
+
+Your engine is from the VW EA827 family (Golf 2 SPI 1.6L):
+- Factory used Digifant ECU or similar for ignition control
+- Distributor was ONLY a signal source + spark distributor
+- Timing was controlled electronically by ECU
+- Vacuum/centrifugal advances were NOT used (bypassed by ECU)
+
+Your Speeduino setup is IDENTICAL to factory:
+- Speeduino = Digifant ECU replacement
+- Bosch Module 124 = Ignition amplifier (like factory)
+- Distributor = Signal source only (like factory)
+
+BUT: You need to disable vacuum advance (factory ECU did this too!)
+AND: You need to calibrate trigger angle (factory did this at assembly!)
+
+
+SUMMARY - IMMEDIATE ACTIONS:
+=============================
+
+Priority 1: CALIBRATE TRIGGER ANGLE
+- Use timing light
+- Set TrigAng to correct offset (-60° to -90° typical)
+- This fixes backfires!
+
+Priority 2: DISCONNECT VACUUM ADVANCE  
+- Unplug vacuum line
+- Or buy NTY distributor (€40)
+
+Priority 3: INCREASE CRANKING TIMING
+- Change CrankAng from 5° to 10°
+- Better cold start performance
+
+Priority 4: TEST
+- Log as teste8
+- Verify no backfires
+- Engine should fire and run smoothly
+
+
+Your fuel system is already perfect (ASE 100/90/60/30%).
+The ONLY remaining problem is ignition timing calibration!

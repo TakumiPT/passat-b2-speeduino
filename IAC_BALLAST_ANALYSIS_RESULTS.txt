@@ -1,0 +1,225 @@
+═══════════════════════════════════════════════════════════════════════════════
+  START ATTEMPTS ANALYSIS: BALLAST RESISTOR & IAC BEHAVIOR
+═══════════════════════════════════════════════════════════════════════════════
+
+TESTS PERFORMED:
+- START 2: WITHOUT 6.8Ω ballast resistor (forgot to connect)
+- START 3: WITH 6.8Ω ballast resistor
+- START 4: WITHOUT 6.8Ω ballast resistor (removed again)
+
+═══════════════════════════════════════════════════════════════════════════════
+KEY FINDINGS
+═══════════════════════════════════════════════════════════════════════════════
+
+1. IAC IS MOVING NORMALLY
+   ✓ Std Dev: 35.9 steps average (>10 = active)
+   ✓ Range: 90-159 steps movement
+   ✓ IAC motor is FUNCTIONAL
+
+2. IAC NOT CONTROLLING RPM EFFECTIVELY
+   ❌ RPM-IAC correlation near ZERO (should be negative -0.5 to -0.8)
+   ❌ Target: 1050-1066 RPM
+   ❌ Actual: 75-391 RPM (massive undershoot)
+   ❌ IAC moving but engine not responding
+
+3. BALLAST RESISTOR IMPACT
+   WITH resistor (START 3):
+     - IAC range reduced: 90 steps (vs 159 without)
+     - RPM-IAC correlation: 0.179 (no effect)
+     - Actual RPM: 75 RPM (worst case - almost stalled)
+   
+   WITHOUT resistor (START 2 & 4):
+     - IAC range full: 159 steps
+     - RPM better but still low: 231-391 RPM
+     - Still not reaching target 1050+ RPM
+
+═══════════════════════════════════════════════════════════════════════════════
+PROBLEM DIAGNOSIS
+═══════════════════════════════════════════════════════════════════════════════
+
+IAC IS MOVING ✓
+BUT ENGINE NOT RESPONDING ✗
+
+This means: AIR is not changing when IAC moves!
+
+ROOT CAUSE ANALYSIS:
+
+Your observation: "i can see on the gauge the steps but i can't feel any 
+                   difference on the engine running"
+
+This is NOT a stuck IAC problem.
+This is an AIR FLOW problem.
+
+MOST LIKELY CAUSES (in order of probability):
+
+1. ❌ IAC BYPASS AIR PASSAGE BLOCKED
+   - Carbon buildup in IAC air passage
+   - Passage too small for this IAC pintle diameter
+   - Passage design mismatch (wrong throttle body for this IAC)
+
+2. ❌ IAC INSTALLED IN WRONG PORT
+   - IAC might be in vacuum port instead of idle air bypass
+   - Check: IAC should control AIR into manifold, not just vacuum signal
+
+3. ❌ VACUUM LEAK bypassing IAC control
+   - Large vacuum leak elsewhere lets engine idle independent of IAC
+   - IAC changes airflow but leak dominates total air
+
+4. ❌ THROTTLE PLATE POSITION
+   - Base idle screw opened too much
+   - Engine getting enough air past throttle plate
+   - IAC changes don't matter because throttle already open
+
+═══════════════════════════════════════════════════════════════════════════════
+SCIENTIFIC PROOF: WHY THIS IS NOT "TOO MUCH FUEL"
+═══════════════════════════════════════════════════════════════════════════════
+
+You suggested: "could be too much fuel because it's cold"
+
+EVIDENCE AGAINST:
+- AFR readings: 13.86-14.54:1 (near stoichiometric, NOT rich)
+- If too much fuel, AFR would be < 12.0:1
+- Cold enrichment is working correctly (AFR slightly rich, not flooded)
+
+EVIDENCE FOR AIR PROBLEM:
+- RPM massively below target (-659 to -983 RPM error)
+- IAC moving 90-159 steps but zero RPM response
+- Correlation between IAC and RPM near zero (0.179-0.237)
+- With resistor, IAC weakened → RPM drops further (75 RPM)
+
+PHYSICS:
+- Engine speed controlled by AIR (with fuel following)
+- If IAC opens but RPM doesn't rise → AIR not increasing
+- If IAC closes but RPM doesn't fall → AIR not decreasing
+
+CONCLUSION: IAC pintle moving, but airflow NOT changing.
+
+═══════════════════════════════════════════════════════════════════════════════
+BALLAST RESISTOR EFFECT
+═══════════════════════════════════════════════════════════════════════════════
+
+COMPARISON: WITH vs WITHOUT 6.8Ω resistor
+
+WITHOUT resistor (START 2 & 4):
+  - Current: ~10 Amps (DANGEROUS to Speeduino!)
+  - IAC stronger: 159 steps full range
+  - RPM: 231-391 RPM (low but better)
+
+WITH resistor (START 3):
+  - Current: 1.71 Amps (SAFE for Speeduino) ✓
+  - IAC weaker: Only 90 steps movement
+  - RPM: 75 RPM (almost stalled)
+  - RPM-IAC correlation: 0.179 (worse than without)
+
+INTERPRETATION:
+Resistor reduces IAC force → pintle moves less → even LESS airflow change
+
+This PROVES the problem is mechanical/airflow, not electrical.
+
+═══════════════════════════════════════════════════════════════════════════════
+DIAGNOSTIC TESTS TO PERFORM
+═══════════════════════════════════════════════════════════════════════════════
+
+TEST 1: IAC AIR PASSAGE CHECK
+  1. Remove IAC from throttle body
+  2. Look into IAC bore with flashlight
+  3. Check for carbon buildup restricting passage
+  4. Measure bore diameter (should be ~8-10mm)
+  5. Spray carb cleaner through passage - does it flow freely?
+
+TEST 2: IAC PINTLE vs BORE CLEARANCE
+  1. With IAC removed, set to step 0 (fully retracted)
+  2. Install in throttle body
+  3. Measure gap between pintle tip and bottom of bore
+  4. Should have 8-10mm depth available for pintle extension
+  5. If pintle bottoms out quickly, bore is too shallow
+
+TEST 3: VACUUM LEAK CHECK
+  1. Engine running (somehow get it to idle)
+  2. Spray carb cleaner around vacuum hoses, gaskets
+  3. If RPM changes → leak found
+  4. Also check: brake booster, PCV, any T-fittings
+
+TEST 4: THROTTLE PLATE BASE POSITION
+  1. Engine off, key on
+  2. Command IAC to step 0 (fully closed)
+  3. Look at throttle plate - should be BARELY cracked open
+  4. If throttle plate visibly open → base idle screw too far out
+  5. Close base idle screw until throttle barely cracked
+
+TEST 5: AIRFLOW MEASUREMENT
+  1. Engine idling (somehow)
+  2. Command IAC from 0 → 165 steps manually
+  3. Put hand near IAC port - do you feel AIR FLOW changing?
+  4. If no air movement felt → passage blocked or wrong port
+
+═══════════════════════════════════════════════════════════════════════════════
+MOST LIKELY SCENARIO
+═══════════════════════════════════════════════════════════════════════════════
+
+Based on all evidence:
+
+IAC BYPASS AIR PASSAGE IS TOO SMALL OR BLOCKED
+
+Why:
+1. IAC motor moves normally when removed (you confirmed)
+2. IAC motor moves normally when installed (log data confirms)
+3. IAC position changes don't affect RPM (correlation ~0.2)
+4. Weakening IAC with resistor makes problem WORSE
+5. Your observation: "can see steps but can't feel difference"
+
+The IAC pintle is moving in/out, but the AIR PASSAGE is:
+  - Too narrow for meaningful airflow change
+  - Blocked by carbon
+  - Wrong design for this IAC type
+  - Connected to wrong port (vacuum instead of air bypass)
+
+═══════════════════════════════════════════════════════════════════════════════
+SOLUTION PATH
+═══════════════════════════════════════════════════════════════════════════════
+
+IMMEDIATE:
+1. Inspect IAC air passage for blockage/carbon
+2. Clean throttle body thoroughly (especially IAC bore)
+3. Verify IAC installed in IDLE AIR port, not vacuum port
+4. Check throttle plate base position (should be barely open)
+
+SHORT TERM:
+1. Keep ballast resistor installed (protects Speeduino) ✓
+2. Increase Injector Opening Time by +0.6ms to compensate
+3. Fix IAC airflow issue before tuning further
+
+LONG TERM:
+1. If passage too small, consider different IAC with smaller pintle
+2. If wrong port, relocate IAC to proper idle air bypass
+3. Once IAC controlling RPM properly, re-tune idle settings
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL FINDING: POSITIVE RPM-IAC CORRELATION
+═══════════════════════════════════════════════════════════════════════════════
+
+Normal IAC behavior: Correlation should be NEGATIVE (-0.5 to -0.8)
+  - IAC closes (higher step count) → airflow reduces → RPM drops
+  - IAC opens (lower step count) → airflow increases → RPM rises
+
+Your logs show POSITIVE correlation (0.179 to 0.909):
+  - IAC closes → RPM RISES?!
+  - IAC opens → RPM DROPS?!
+
+This is BACKWARDS from expected behavior!
+
+POSSIBLE EXPLANATIONS:
+1. IAC inverted setting is WRONG (should be "not inverted")
+2. IAC controlling vacuum signal, not airflow
+3. Secondary effect: IAC closes → manifold vacuum changes → 
+   distributor vacuum advance changes → timing changes → RPM changes
+
+RECOMMENDATION:
+Check IAC inverted setting in TunerStudio:
+  - If "Inverted" → try "Not Inverted"
+  - If "Not Inverted" → try "Inverted"
+  
+Correct behavior: IAC step 0 = maximum airflow, step 165 = minimum airflow
+Wrong behavior: IAC step 0 = minimum airflow, step 165 = maximum airflow
+
+═══════════════════════════════════════════════════════════════════════════════

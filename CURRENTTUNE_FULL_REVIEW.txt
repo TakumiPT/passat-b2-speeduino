@@ -1,0 +1,357 @@
+================================================================================
+CURRENTTUNE.MSQ COMPREHENSIVE REVIEW
+VW Passat B2 1984 - 1.6L DT Engine + Gol G2 SPI + Speeduino v4
+Review Date: December 2025
+================================================================================
+
+SUMMARY: ✅ TUNE IS READY FOR ROAD TESTING
+
+================================================================================
+1. ENGINE CONFIGURATION ✅ CORRECT
+================================================================================
+
+Setting              | Value           | Status
+---------------------|-----------------|--------
+Four Stroke          | Yes             | ✅
+Cylinders            | 4               | ✅
+Injectors            | 1               | ✅ (SPI monopoint)
+Injector Type        | Throttle Body   | ✅
+Injector Layout      | Paired          | ✅
+Algorithm            | MAP (Speed Density) | ✅
+Engine Type          | Even fire       | ✅
+Pin Layout           | Speeduino v0.4  | ✅
+
+================================================================================
+2. FUEL INJECTION SETTINGS ✅ CORRECT
+================================================================================
+
+Setting              | Value           | Status
+---------------------|-----------------|--------
+Req Fuel             | 4.3 ms          | ✅ (calculated for 60 lb/hr injector)
+Injector Opening     | 1.0 ms          | ✅ (typical for low impedance)
+Divider              | 1               | ✅
+Battery Correction   | Open Time only  | ✅
+
+NOTE: With SPI monopoint, the 60 lb/hr setting with 4.3ms Req Fuel 
+provides adequate flow for the 75 PS engine.
+
+================================================================================
+3. TRIGGER/TIMING CONFIGURATION ✅ READY FOR IGNITION
+================================================================================
+
+Setting              | Value           | Status
+---------------------|-----------------|--------
+Trigger Pattern      | Basic Distributor | ✅
+Trigger Speed        | Crank Speed     | ✅
+Trigger Edge         | FALLING         | ✅ (verify with scope)
+Trigger Angle        | 0.0°            | ⚠️ Needs adjustment when ignition wired
+Fixed Angle          | 12.0°           | ✅ (good for testing)
+Crank Angle          | 12.0°           | ✅
+Missing Teeth        | 1               | ✅
+Number of Teeth      | 12              | ✅
+Crank RPM Threshold  | 300 RPM         | ✅
+
+Spark Mode           | Single Channel  | ✅ (correct for distributor)
+Ignition Invert      | Going Low       | ✅ (verify polarity)
+Spark Duration       | 1.0 ms          | ✅
+
+Dwell Running        | 3.0 ms          | ✅
+Dwell Cranking       | 4.5 ms          | ✅
+Dwell Limit          | 8.0 ms          | ✅ (coil protection)
+
+================================================================================
+4. VE TABLE ✅ CORRECTED
+================================================================================
+
+Range: 36% - 83% (was 15-19% before fix!)
+
+RPM Bins: 500, 700, 900, 1200, 1500, 1800, 2200, 2700, 3000, 3400, 3900, 4300, 4800, 5200, 5700, 6200
+Load Bins: 16, 26, 30, 36, 40, 46, 50, 56, 60, 66, 70, 76, 86, 90, 96, 100 kPa
+
+Peak values: 83% at high load/high RPM
+Low idle values: 36-40% at idle (was 15-19% - FIXED!)
+
+Status: ✅ VE table generated with correct engine physics
+- Peak torque RPM aligned with 3000 RPM (factory spec: 130 Nm @ 3000 RPM)
+- Peak power RPM aligned with 5200 RPM (factory spec: 75 PS @ 5200 RPM)
+- Proper falloff toward 6200 RPM redline
+
+================================================================================
+5. AFR TARGET TABLE ✅ WELL CONFIGURED
+================================================================================
+
+Strategy:
+- Idle/Cruise: 14.7 AFR (stoichiometric for fuel economy)
+- Part throttle: 14.7-15.1 AFR (slightly lean for economy)
+- High load/WOT: 12.5-13.4 AFR (rich for power/safety)
+
+Progression:
+- Low load: 14.7-15.1 AFR (cruise economy)
+- Medium load: 13.7-14.7 AFR (transition)
+- High load: 12.5-12.8 AFR (WOT protection)
+
+Status: ✅ Excellent AFR strategy for naturally aspirated engine
+
+================================================================================
+6. ACCELERATION ENRICHMENT (TAE) ✅ OPTIMIZED
+================================================================================
+
+Setting              | Value           | Status
+---------------------|-----------------|--------
+AE Mode              | TPS             | ✅ (correct for SPI)
+AE Apply Mode        | PW Adder        | ✅ (adds to PW, doesn't multiply)
+TPS Threshold        | 40 %/s          | ✅ (activation threshold)
+AE Time              | 450 ms          | ✅ (enrichment duration)
+AE Taper Min RPM     | 1000 RPM        | ✅
+AE Taper Max RPM     | 5000 RPM        | ✅
+TAE Min Change       | 1.0%            | ✅
+
+TAE Curve:
+  TPS Rate (%/s)  | Enrichment (%)
+  ----------------|----------------
+  70              | 70%             ✅ Gentle throttle
+  220             | 120%            ✅ Moderate throttle
+  430             | 180%            ✅ Fast throttle
+  790             | 220%            ✅ Aggressive throttle
+
+Cold Enrichment:
+  AE Cold Percent | 100%            ✅
+  Cold Taper Min  | 0°C             ✅
+  Cold Taper Max  | 60°C            ✅
+
+Deceleration:
+  Decel Amount    | 100%            ✅ (no decel enleanment)
+
+Status: ✅ TAE properly configured for the now-correct VE table
+
+================================================================================
+7. WARM-UP ENRICHMENT (WUE) ✅ UPDATED
+================================================================================
+
+Temperature Bins (°C): -40, -26, 10, 19, 28, 37, 50, 65, 80, 90
+Enrichment Values (%): 180, 175, 168, 154, 134, 121, 112, 106, 102, 100
+
+Analysis:
+  -40°C: 180% (80% extra fuel) - ✅ Extreme cold
+  -26°C: 175% (75% extra fuel) - ✅ Very cold
+   10°C: 168% (68% extra fuel) - ✅ Cold morning
+   19°C: 154% (54% extra fuel) - ✅ Cool
+   28°C: 134% (34% extra fuel) - ✅ Room temp
+   37°C: 121% (21% extra fuel) - ✅ Warming
+   50°C: 112% (12% extra fuel) - ✅ Still enriching
+   65°C: 106% (6% extra fuel)  - ✅ Almost warm
+   80°C: 102% (2% extra fuel)  - ✅ Warm
+   90°C: 100% (no enrichment)  - ✅ Fully warm (UPDATED!)
+
+Status: ✅ WUE now extends to 90°C (was ending at 64°C)
+
+================================================================================
+8. CRANKING ENRICHMENT ✅ CORRECT
+================================================================================
+
+Temperature Bins (°C): -40, 0, 30, 70
+Enrichment Values (%): 280, 230, 210, 200
+
+Analysis:
+  -40°C: 280% (180% extra) - ✅ Extreme cold cranking
+    0°C: 230% (130% extra) - ✅ Freezing temp
+   30°C: 210% (110% extra) - ✅ Normal cold start
+   70°C: 200% (100% extra) - ✅ Hot restart
+
+Cranking Settings:
+  Cranking Percent Base | 20%             ✅
+  Crank RPM Threshold   | 300 RPM         ✅
+  TPS Flood Clear       | 80%             ✅
+
+Status: ✅ Cranking enrichment appropriate for carburetor-to-EFI conversion
+
+================================================================================
+9. PRIME PULSE ✅ CORRECT
+================================================================================
+
+Temperature Bins (°C): -20, 0, 40, 82
+Prime Pulse (ms): 8.0, 6.0, 3.0, 2.0
+
+Analysis:
+  -20°C: 8.0 ms - ✅ Cold weather extra prime
+    0°C: 6.0 ms - ✅ Freezing
+   40°C: 3.0 ms - ✅ Warm
+   82°C: 2.0 ms - ✅ Hot (minimal prime)
+
+Status: ✅ Prime pulse provides initial fuel on key-on
+
+================================================================================
+10. REV LIMITERS ✅ CORRECT
+================================================================================
+
+Setting              | Value           | Status
+---------------------|-----------------|--------
+Soft Rev Limit       | 6000 RPM        | ✅ (warning zone)
+Soft Limit Retard    | 20°             | ✅
+Soft Limit Max Time  | 2.0 s           | ✅
+Hard Rev Limit       | 7000 RPM        | ✅ (fuel cut)
+
+Factory redline: ~6200 RPM (per instrument cluster)
+Configuration is appropriate:
+- Soft limit at 6000 RPM (200 RPM before redline)
+- Hard cut at 7000 RPM (800 RPM safety margin)
+
+Status: ✅ Engine protection is properly configured
+
+================================================================================
+11. IGNITION TABLE ✅ PREPARED (Not active yet)
+================================================================================
+
+Current ignition is controlled by distributor, but table is ready:
+
+Idle timing: 16-18° BTDC
+Low RPM: 18-32° BTDC
+Cruise: 34-40° BTDC
+High RPM/Low Load: 40° BTDC
+WOT/High Load: 30-33° BTDC (retarded for knock safety)
+
+RPM bins extend to 9000 (conservative for 6200 redline engine)
+Load bins: 10-100 kPa
+
+Status: ✅ Table prepared for when Speeduino controls ignition
+
+================================================================================
+12. IDLE AIR CONTROL ⚪ NOT CONFIGURED
+================================================================================
+
+IAC Algorithm: None
+
+This is likely correct if:
+- Using factory idle air bypass screw
+- Using IAC valve wired separately
+- Throttle body has fixed idle air bleed
+
+Status: ⚪ Not using electronic idle control (acceptable)
+
+================================================================================
+13. FAN CONTROL ⚠️ DISABLED
+================================================================================
+
+Setting              | Value           | Status
+---------------------|-----------------|--------
+Fan Enable           | Off             | ⚠️
+Fan Setpoint         | 90°C            | (Ready if enabled)
+Fan Hysteresis       | 5°C             | (Ready if enabled)
+
+NOTE: Fan control is disabled. If you want Speeduino to control the 
+radiator fan, enable this feature and wire the fan relay to the 
+appropriate output pin.
+
+Status: ⚠️ May want to enable if fan relay is wired to Speeduino
+
+================================================================================
+14. CLOSED LOOP O2 CORRECTION ⚪ DISABLED
+================================================================================
+
+Setting              | Value           | Status
+---------------------|-----------------|--------
+EGO Algorithm        | No correction   | ⚪ Manual tuning mode
+EGO Type             | Wide Band       | ✅ (sensor type set)
+Incorporate AFR      | No              | ✅ (not correcting)
+
+O2 Sensor Settings (if enabled later):
+  EGO KP            | 35%             ✅
+  EGO KI            | 0%              ✅
+  EGO Count         | 16              ✅
+  EGO Limit         | 15%             ✅
+  AFR Min/Max       | 10.0-17.0       ✅
+  Startup Delay     | 15 sec          ✅
+  Min RPM           | 1200 RPM        ✅
+
+Status: ⚪ O2 correction disabled (recommended for initial tuning)
+
+================================================================================
+15. DFCO (DECEL FUEL CUT OFF) ⚪ DISABLED
+================================================================================
+
+DFCO Enabled: Off
+
+Status: ⚪ Optional feature, disabled is fine for initial testing
+
+================================================================================
+16. ADVANCED FEATURES ⚪ APPROPRIATELY DISABLED
+================================================================================
+
+Feature              | Status          | Notes
+---------------------|-----------------|--------
+Boost Control        | Off             | ✅ N/A engine
+VVT                  | Off             | ✅ N/A engine
+Flex Fuel            | Off             | ✅ Not using ethanol sensor
+Launch Control       | Disabled        | ✅ Not needed
+Flat Shift           | Disabled        | ✅ Not needed
+Nitrous              | N/A             | ✅ Not installed
+Staging              | Off             | ✅ Single injector
+
+Status: ✅ All N/A features correctly disabled
+
+================================================================================
+17. SENSOR CONFIGURATIONS
+================================================================================
+
+Pressure Sensors:
+  Fuel Pressure     | Disabled        | ⚪ Optional
+  Oil Pressure      | Disabled        | ⚪ Optional
+
+Temperature Sensors:
+  CLT Sensor        | Configured      | (Verify calibration with known temp)
+  IAT Sensor        | Configured      | (Verify calibration)
+
+Status: ⚪ Basic sensors configured, advanced protection optional
+
+================================================================================
+FINAL CHECKLIST BEFORE ROAD TESTING
+================================================================================
+
+✅ VE Table: Corrected to 36-83% (was 15-19%)
+✅ TAE: Optimized for corrected VE table (70-220%)
+✅ WUE: Extended to 90°C end temperature
+✅ Cranking: 200-280% based on temperature
+✅ Rev Limiters: 6000/7000 RPM
+✅ Spark Mode: Single Channel ready
+✅ Injector Config: 1 injector, 4.3ms Req Fuel
+
+PRE-FLIGHT CHECKS:
+□ Verify CLT reads correctly (compare to known thermometer)
+□ Verify TPS reads 0% closed, ~100% WOT
+□ Verify MAP reads ~100 kPa at key-on, ~30 kPa at idle
+□ Check for fuel leaks at throttle body
+□ Check all electrical connections secure
+
+FIRST START PROCEDURE:
+1. Turn key ON, wait for fuel pump prime (2-3 seconds)
+2. Check for fuel leaks
+3. Crank engine, should start within 2-3 seconds
+4. Monitor AFR on gauge/laptop
+5. Expected idle AFR: 14.5-15.0 (slightly lean OK)
+6. Expected warm-up AFR: 13.5-14.5 (rich from WUE)
+
+ROAD TEST PROCEDURE:
+1. Let engine fully warm up (90°C+ CLT)
+2. Drive gently at first, monitoring AFR
+3. Test light acceleration - should be smooth
+4. Test moderate acceleration - no hesitation
+5. Test WOT briefly - AFR should drop to 12.5-13.0
+6. Monitor for any knock/ping sounds
+
+EXPECTED IMPROVEMENTS:
+- No more intake backfires during acceleration
+- Smoother throttle response
+- Better cold start performance
+- Proper warm-up enrichment curve
+
+================================================================================
+                            TUNE STATUS: ✅ READY
+================================================================================
+
+The tune is properly configured for road testing. The root cause of the 
+acceleration backfires (severely lean VE table with 15-19% values) has been 
+corrected. All enrichment systems are properly configured.
+
+Good luck with the road test!
+
+================================================================================

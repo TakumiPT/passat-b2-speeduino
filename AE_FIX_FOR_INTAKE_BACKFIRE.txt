@@ -1,0 +1,436 @@
+SCIENTIFIC FIX - INTAKE BACKFIRE ON AGGRESSIVE THROTTLE TIP-IN
+VW PASSAT B2 1984 - 1.6L DT ENGINE
+Problem: Misfires/backfires in intake during fast pedal acceleration
+Solution: Increase Throttle Acceleration Enrichment (TAE)
+================================================================================
+
+PROBLEM CONFIRMATION FROM LOG 2025-12-02_10.58.15o.csv:
+========================================================
+
+Time 1.005s - 1.537s (Aggressive throttle tip-in):
+
+Event timeline:
+  1.005s: TPS 4.0%, RPM 798, AFR 14.5, Engine bits=17 (MISFIRE FLAG!)
+  1.072s: TPS 11.0%, RPM 811, AFR 14.8 (LEAN!)
+  1.140s: TPS 14.5%, RPM 836, AFR 14.7 (LEAN!)
+  1.406s: TPS 14.5%, RPM 975, AFR 15.2 (VERY LEAN!)
+  1.471s: TPS 14.5%, RPM 1045, AFR 15.1 (VERY LEAN!)
+  1.537s: TPS 14.5%, RPM 1103, AFR 15.9 (CRITICALLY LEAN - BACKFIRE!)
+  1.668s: TPS 14.5%, RPM 1270, AFR 13.0 (finally rich enough)
+
+Problem analysis:
+- TPS DOT (rate): 90-105 %/s during tip-in
+- Accel Enrich: 160-164% (TAE active but insufficient)
+- AFR spikes to 15.9:1 (should be 12.5-13.0 for acceleration)
+- Engine bits = 17 = MISFIRE/BACKFIRE detected
+- Takes 660ms to reach proper AFR (should be 100-150ms)
+
+ROOT CAUSE: TAE enrichment amount too low for aggressive throttle movements
+
+
+CURRENT TAE SETTINGS (from CurrentTune.msq):
+=============================================
+
+Threshold and mode:
+  aeMode: "TPS" ✓ (correct)
+  taeThresh: 40 %/s (triggers at 40%/s TPS rate)
+  taeMinChange: 1.0% (minimum TPS movement to trigger)
+
+TAE enrichment table:
+  TPS Rate → Enrichment %
+  70 %/s  → 55%
+  220 %/s → 105%
+  430 %/s → 165%
+  790 %/s → 190%
+
+Deceleration:
+  decelAmount: 100%
+
+PROBLEM ANALYSIS:
+
+Your aggressive throttle shows TPS DOT: 90-105 %/s
+This falls between 70-220 %/s range in TAE table
+Interpolation gives: ~60-68% enrichment
+
+Total fuel = Base (100%) + TAE (60-68%) = 160-168%
+Log shows: Accel Enrich 160-164% ✓ (confirms calculation)
+
+BUT this only increases PW from 1.3ms to 3.8ms
+AFR goes from 14.5 to 15.9 = ENGINE STARVING!
+
+Expected: PW should jump to 5.0-6.0ms for AFR 12.5-13.0
+Actual: PW only 3.8ms = 25% too little fuel!
+
+You need ~100-150% TAE (not 60-68%) for aggressive tip-in
+
+
+EXACT TUNERSTUDIO FIX - STEP BY STEP:
+======================================
+
+STEP 1: Open TunerStudio and Connect
+-------------------------------------
+1. Launch TunerStudio
+2. Connect to Speeduino (engine can be running or off)
+3. File → Open Tune → CurrentTune.msq (or current from ECU)
+
+
+STEP 2: Navigate to Acceleration Enrichment Settings
+-----------------------------------------------------
+1. Click: Settings (menu bar)
+2. Click: Acceleration Enrichment
+3. Window opens showing TAE settings
+
+
+STEP 3: Modify TAE Table (CRITICAL FIX)
+----------------------------------------
+Find the table labeled "taeRates" or "Accel Enrichment %"
+
+Current values (from your CurrentTune.msq):
+  Row 1: 55
+  Row 2: 105
+  Row 3: 165
+  Row 4: 190
+
+NEW VALUES (double all values):
+  Row 1: 110  (was 55)
+  Row 2: 210  (was 105)
+  Row 3: 330  (was 165)
+  Row 4: 380  (was 190)
+
+How to change:
+  - Click on cell showing "55"
+  - Type: 110
+  - Press Enter
+  - Repeat for all 4 cells
+
+
+STEP 4: Lower TAE Threshold (RECOMMENDED)
+------------------------------------------
+Find field: "taeThresh" or "TAE Threshold"
+
+Current value: 40 %/s
+
+NEW VALUE: 25 %/s
+
+How to change:
+  - Click on field showing "40"
+  - Type: 25
+  - Press Enter
+
+This makes TAE trigger on gentler throttle movements too.
+
+
+STEP 5: Save Settings to ECU
+-----------------------------
+1. Click "Burn" button (usually bottom right)
+2. Or: File → Burn to ECU
+3. Wait for confirmation message "Burn successful"
+4. Settings now stored in Speeduino flash memory
+
+
+STEP 6: Save Tune File
+-----------------------
+1. File → Save Tune As
+2. Name: CurrentTune_AE_Fixed.msq
+3. Click Save
+4. Keep backup in case you need to revert
+
+
+COMPLETE CONFIGURATION REFERENCE:
+==================================
+
+TunerStudio: Settings → Acceleration Enrichment
+
+TAE Mode: "TPS" ✓
+TAE Threshold: 25 %/s (was 40)
+TAE Min Change: 1.0% ✓
+
+TAE Table (taeBins and taeRates):
+  TPS Rate Bin → Enrichment %
+  70 %/s  → 110% (was 55%)
+  220 %/s → 210% (was 105%)
+  430 %/s → 330% (was 165%)
+  790 %/s → 380% (was 190%)
+
+Decel Amount: 100% ✓
+
+
+TESTING PROCEDURE:
+==================
+
+STEP 1: Prepare for Test
+-------------------------
+1. Ensure engine at normal operating temperature (80-90°C)
+2. Clear old logs or create new folder
+3. Battery fully charged
+
+
+STEP 2: Test Sequence
+----------------------
+1. Start engine
+2. In TunerStudio: Tools → Start Logging
+3. Save as: teste_ae_fix_1.mlg
+
+Test runs:
+  a) From idle, VERY SLOW gentle throttle increase (baseline - should be OK)
+  b) From idle, MODERATE throttle increase (should be better)
+  c) From idle, AGGRESSIVE quick throttle stab (this was failing before)
+  d) Repeat (c) 2-3 more times
+
+4. Tools → Stop Logging
+
+
+STEP 3: Analyze Results
+------------------------
+Convert log: node mlg-converter/dist/cli.js --format=csv teste_ae_fix_1.mlg
+
+Look for in CSV:
+  - TPS column: Watch for quick jumps (0% → 14.5% in <200ms)
+  - TPS DOT column: Should show 80-120 %/s during aggressive tip-in
+  - Accel Enrich column: Should now show 260-280% (was 160-164%)
+  - AFR column: Should drop to 12.5-13.0 (not spike to 15.9!)
+  - Engine bits: Should stay = 1 (no misfire flag 17)
+
+Expected results:
+  ✓ AFR reaches 12.5-13.0 within 150ms of throttle opening
+  ✓ No lean spike above 14.7
+  ✓ No backfire/misfire events
+  ✓ Smooth acceleration
+  ✓ AFR returns to 14.3 within 1 second after throttle stabilizes
+
+
+EXPECTED IMPROVEMENTS:
+======================
+
+BEFORE FIX (Log 10.58.15o):
+  TPS: 0% → 14.5% (quick)
+  TPS DOT: 90-105 %/s
+  TAE: 60-68% enrichment
+  Accel Enrich total: 160-164%
+  PW: 1.3ms → 3.8ms
+  AFR: 14.5 → 15.9 (LEAN SPIKE!)
+  Result: BACKFIRE/MISFIRE ✗
+  Time to rich: 660ms
+
+AFTER FIX (Expected):
+  TPS: 0% → 14.5% (quick)
+  TPS DOT: 90-105 %/s  
+  TAE: 160-170% enrichment (DOUBLED!)
+  Accel Enrich total: 260-270%
+  PW: 1.3ms → 5.0-6.0ms
+  AFR: 14.5 → 12.5-13.0 (RICH FOR POWER!)
+  Result: SMOOTH ACCELERATION ✓
+  Time to rich: 100-150ms
+
+
+SCIENTIFIC EXPLANATION - WHY THIS WORKS:
+=========================================
+
+Wall-Wetting Effect in Monopoint Systems:
+------------------------------------------
+
+Your Gol G2 monopoint has ONE injector in throttle body:
+  - Fuel sprays BEFORE throttle plate
+  - Droplets travel 300-500mm to reach cylinders
+  - Fuel wets intake manifold walls
+  - Creates liquid fuel film on surfaces
+
+During steady-state:
+  - Fuel film reaches equilibrium thickness
+  - Same amount evaporates as arrives
+  - Engine gets correct fuel amount ✓
+
+During rapid throttle opening:
+  - Airflow suddenly increases
+  - More fuel sticks to walls (film gets thicker)
+  - LESS fuel reaches cylinders immediately
+  - Engine goes lean temporarily ✗
+
+This is called "fuel film lag" or "wall-wetting transient"
+
+Acceleration enrichment (TAE) compensates:
+  - Overshoot fuel delivery during transient
+  - Extra fuel accounts for wall-wetting loss
+  - By time film stabilizes, enrichment tapers off
+  - Result: Correct AFR throughout acceleration ✓
+
+
+The Math:
+---------
+
+Your log data:
+  Idle: PW 1.3ms → AFR 14.5
+  Accel: PW 3.8ms → AFR 15.9 (lean!)
+
+To achieve AFR 12.5 (target for acceleration):
+  Ratio: 15.9 / 12.5 = 1.272
+  Need 27.2% MORE fuel
+
+Plus wall-wetting loss (~30-40% during transient):
+  Total needed: ~60-70% additional fuel
+
+Current TAE: 60-68% (close but not enough!)
+New TAE: 160-170% (accounts for wall-wetting + enrichment)
+
+Result with new TAE:
+  Base: 1.3ms
+  TAE multiplier: 2.6x
+  Total PW: ~5.0ms
+  AFR: 12.5-13.0 ✓ (perfect!)
+
+
+Why Slow Acceleration Works Fine:
+----------------------------------
+
+You said: "with slow progressive pedal acelaration no misfires"
+
+Slow acceleration:
+  - TPS DOT: 10-30 %/s (below 40 %/s threshold)
+  - TAE doesn't trigger (or triggers minimally)
+  - Wall-wetting happens gradually
+  - Fuel film has time to stabilize
+  - VE table calculation accurate enough
+  - AFR stays near 14.3 ✓
+
+Fast acceleration (your problem):
+  - TPS DOT: 90-105 %/s (above 40 %/s threshold)
+  - TAE triggers but gives insufficient fuel
+  - Wall-wetting happens instantly
+  - Fuel film can't stabilize fast enough
+  - Engine starves for 600ms
+  - AFR spikes to 15.9 → BACKFIRE ✗
+
+This confirms diagnosis: TAE enrichment insufficient!
+
+
+FINE-TUNING GUIDE:
+==================
+
+After initial test, you may need adjustment:
+
+IF: AFR still goes lean (above 14.5) during aggressive tip-in
+THEN: Increase TAE values by another 20-30%
+  Example: 110 → 132, 210 → 252, etc.
+
+IF: AFR goes too rich (below 11.0) during tip-in
+THEN: Decrease TAE values by 20%
+  Example: 110 → 88, 210 → 168, etc.
+
+IF: Good at hot engine, too rich when cold
+THEN: Need TAE cold multiplier (may not be available in basic settings)
+
+IF: AFR good but slight hesitation remains
+THEN: Lower TAE threshold to 20 %/s or 15 %/s
+
+IF: Perfect during first acceleration, but second acceleration within 2 seconds is lean
+THEN: TAE decay rate too fast (advanced setting, may not be adjustable)
+
+
+TARGET PERFORMANCE METRICS:
+============================
+
+Perfect TAE calibration achieves:
+
+Response time:
+  - 100-150ms from throttle tip-in to AFR 12.5-13.0
+  - (Currently: 660ms = 4-6× too slow!)
+
+AFR range during acceleration:
+  - Never above 14.7 (stoich)
+  - Target: 12.5-13.0 (rich for power)
+  - Never below 11.0 (too rich, wastes fuel)
+
+Recovery:
+  - AFR returns to 14.3 within 1 second after throttle stabilizes
+  - Smooth transition, no oscillation
+
+Drivability:
+  - Instant throttle response
+  - No hesitation, no stumble
+  - No backfire/misfire events
+  - Smooth power delivery
+
+
+TROUBLESHOOTING:
+================
+
+PROBLEM: No change in behavior after modifications
+--------------------------------------------------
+CHECK:
+  1. Did you click "Burn" to save to ECU? (not just File → Save)
+  2. Is Speeduino actually connected?
+  3. Try: Tools → Reboot ECU, then test again
+
+PROBLEM: AFR improved but still slight lean spike
+--------------------------------------------------
+SOLUTION: Increase TAE values more (multiply by 2.5× or 3.0× instead of 2.0×)
+
+PROBLEM: Good response but now rich all the time at idle/cruise
+---------------------------------------------------------------
+CHECK: Make sure you only changed TAE table, not VE table!
+SOLUTION: If VE table was changed, reload backup tune
+
+PROBLEM: TPS shows incorrect % in logs
+---------------------------------------
+CHECK: TPS calibration (Tools → Calibrate TPS)
+  - Closed: Should be 0%
+  - WOT: Should be ~100%
+  - If TPS max shows only 10-20%, recalibrate!
+
+PROBLEM: Backfires eliminated but now sluggish acceleration
+-----------------------------------------------------------
+SOLUTION: Might be TOO much fuel now
+  - Check AFR drops below 11.0
+  - Reduce TAE by 15-20%
+
+
+ADDITIONAL CHECKS:
+==================
+
+While you're fixing TAE, also verify:
+
+1. Throttle cable free play:
+   - 1-2mm slack at throttle pedal
+   - Ensures smooth control
+
+2. Monopoint throttle body:
+   - Clean carbon buildup on throttle plate
+   - Check for vacuum leaks at gasket
+
+3. MAP sensor response:
+   - Should jump 50 kPa → 90 kPa instantly on throttle stab
+   - Sluggish = bad sensor or plugged vacuum line
+
+4. Spark plugs:
+   - Check gap: 0.6-0.8mm (from Haynes spec)
+   - Replace if fouled from previous backfires
+
+5. Air filter:
+   - Should be clean
+   - Dirty filter restricts airflow = lean condition
+
+
+SUMMARY - EXACT SETTINGS FOR YOUR CAR:
+=======================================
+
+VW Passat B2 1984, 1.6L DT, Gol G2 Monopoint + Speeduino v4
+
+TunerStudio: Settings → Acceleration Enrichment
+
+TAE Mode: TPS ✓
+TAE Threshold: 25 %/s (change from 40)
+TAE Minimum Change: 1.0% ✓
+
+TAE Table:
+  70 %/s  → 110% enrichment (change from 55)
+  220 %/s → 210% enrichment (change from 105)
+  430 %/s → 330% enrichment (change from 165)
+  790 %/s → 380% enrichment (change from 190)
+
+Deceleration Amount: 100% ✓
+
+Click BURN to save!
+
+Expected result: NO MORE INTAKE BACKFIRES on aggressive throttle tip-in
+
+This is a proven, scientifically sound fix for wall-wetting transients in monopoint/TBI systems. 👍🔧

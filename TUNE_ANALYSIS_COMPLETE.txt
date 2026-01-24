@@ -1,0 +1,243 @@
+═══════════════════════════════════════════════════════════════════════════════
+  TUNERSTUDIO CONFIGURATION ANALYSIS
+═══════════════════════════════════════════════════════════════════════════════
+
+File: CurrentTune.msq
+Date: Fri Nov 21 19:07:06 GMT 2025
+Firmware: Speeduino 2025.01.6
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL FINDINGS - WHY ENGINE WON'T START WITH RESISTOR
+═══════════════════════════════════════════════════════════════════════════════
+
+1. INJECTOR OPENING TIME: 1.6 ms (ALREADY CONFIGURED!)
+   ✓ This is GOOD - compensation already applied!
+   
+2. REQ_FUEL: 16.8 ms
+   - This is VERY HIGH for a 60 lb/hr injector
+   - Calculation check: (1600cc × 0.4) / (60 lb/hr × 1) = 10.67 ms expected
+   - Actual: 16.8 ms = 157% of expected
+   - This suggests injector configured as smaller than actual
+
+3. IAC CRANKING POSITION AT 21°C:
+   Temperature bins: -21°C, 0°C, 37°C, 79°C
+   IAC Steps:         0,    60,  120,  165
+   
+   At 21°C (between 0°C and 37°C): IAC = ~90 steps (interpolated)
+   
+   ⚠️ PROBLEM: IAC step 0 = MAXIMUM AIRFLOW (inverted stepper)
+              Lower temps → IAC more open → MORE AIR during cranking
+   
+   This explains MAP 99 kPa during cranking!
+
+4. CRANKING ENRICHMENT AT 21°C:
+   Temperature bins: -40°C, 0°C, 30°C, 70°C
+   Enrichment:       140%, 115%, 105%, 100%
+   
+   At 21°C (between 0°C and 30°C): ~110% enrichment
+   
+5. CRANKING BASE FUEL: 20% of Req_Fuel
+   = 20% × 16.8 ms = 3.36 ms base
+   × 110% enrichment = 3.70 ms cranking pulsewidth (theoretical)
+
+═══════════════════════════════════════════════════════════════════════════════
+COMPARISON WITH ACTUAL LOG DATA
+═══════════════════════════════════════════════════════════════════════════════
+
+START 2 (NO RESISTOR):
+  Cranking PW: 0.19 ms (measured from log)
+  Expected:    3.70 ms (from tune settings)
+  Ratio:       0.19/3.70 = 5.1% of expected!
+  
+  ⚠️ MASSIVE DISCREPANCY - Pulsewidth FAR lower than configured!
+
+START 3 (WITH RESISTOR):
+  Cranking PW: 1.38 ms (measured from log)
+  Expected:    3.70 ms (from tune settings)
+  Ratio:       1.38/3.70 = 37.3% of expected
+  
+  ⚠️ STILL LOW but 7x better than without resistor!
+
+START 4 (NO RESISTOR):
+  Cranking PW: 0.38 ms (measured from log)
+  Expected:    3.70 ms (from tune settings)
+  Ratio:       0.38/3.70 = 10.3% of expected
+
+═══════════════════════════════════════════════════════════════════════════════
+MYSTERY: WHY IS ACTUAL PULSEWIDTH SO LOW?
+═══════════════════════════════════════════════════════════════════════════════
+
+The log shows pulsewidths MUCH lower than TunerStudio settings suggest.
+
+POSSIBLE EXPLANATIONS:
+
+1. BATTERY VOLTAGE CORRECTION
+   - Log shows Battery = 3.85V during START 2 cranking
+   - This is IMPOSSIBLY LOW (dead battery reads ~10V)
+   - Battery sensor may be WRONG or reading voltage AFTER resistor
+   
+   If Speeduino sees "3.85V", it applies MASSIVE voltage correction:
+   - Injector flow increases with voltage
+   - Low voltage → reduce pulsewidth to compensate
+   - This would explain 0.19 ms vs expected 3.70 ms
+
+2. REQ_FUEL MISCALCULATION
+   - Req_Fuel 16.8 ms seems wrong for this setup
+   - Speeduino uses Req_Fuel as base for all calculations
+   - If too high, all other corrections fight against it
+
+3. VE TABLE COMPENSATION
+   - VE table shows ~20% at idle
+   - During cranking, VE might be even lower
+   - Low VE × High Req_Fuel = Low actual PW
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL DISCOVERY: BATTERY VOLTAGE READING IS WRONG
+═══════════════════════════════════════════════════════════════════════════════
+
+START 2 (NO resistor):
+  Battery during cranking: 3.85V average
+  
+START 3 (WITH resistor):
+  Battery during cranking: 7.86V average
+  
+START 4 (NO resistor):
+  Battery during cranking: 7.98V average
+
+PATTERN:
+  - WITH resistor: Battery reads ~8V (more realistic but still low)
+  - WITHOUT resistor: Battery reads 3.85-7.98V (varies wildly)
+
+HYPOTHESIS:
+Battery voltage sensor is measuring AFTER the injector/resistor circuit!
+
+When injector fires (10A without resistor):
+  - Voltage drop across wiring
+  - Speeduino sees low voltage
+  - Applies huge correction
+  - Reduces pulsewidth drastically
+
+With resistor (1.7A):
+  - Less voltage drop
+  - Speeduino sees higher voltage (7.86V)
+  - Less correction needed
+  - Higher pulsewidth (1.38 ms vs 0.19 ms)
+
+═══════════════════════════════════════════════════════════════════════════════
+WHY ENGINE STARTS WITHOUT RESISTOR BUT NOT WITH RESISTOR
+═══════════════════════════════════════════════════════════════════════════════
+
+ACTUAL MECHANISM (revised understanding):
+
+WITHOUT RESISTOR:
+  1. Injector draws 10A when firing
+  2. Battery voltage sensor drops to 3.85V (voltage drop from high current)
+  3. Speeduino calculates: need VERY short pulsewidth (0.19 ms)
+  4. BUT injector is overpowered (10A) so opens VERY FAST
+  5. 0.19 ms @ 10A delivers JUST ENOUGH fuel to start engine
+  6. Engine barely starts, runs lean (AFR 16.09)
+
+WITH RESISTOR:
+  1. Injector draws 1.7A when firing (resistor limits current)
+  2. Less voltage drop, sensor reads 7.86V
+  3. Speeduino calculates: need longer pulsewidth (1.38 ms)
+  4. BUT injector is weak (1.7A) so opens SLOWLY
+  5. Without Opening Time compensation, 1.38 ms doesn't deliver enough
+  6. Engine FAILS to start (insufficient fuel)
+
+PARADOX EXPLAINED:
+The "wrong" battery voltage reading actually HELPS without resistor!
+Low voltage reading → shorter pulsewidth → but fast injector compensates
+With resistor → voltage reading improves → but slow injector can't keep up
+
+═══════════════════════════════════════════════════════════════════════════════
+THE REAL PROBLEMS
+═══════════════════════════════════════════════════════════════════════════════
+
+1. ❌ BATTERY VOLTAGE SENSOR LOCATION IS WRONG
+   - Must measure at battery positive terminal DIRECTLY
+   - Currently measures after injector circuit (sees voltage drop)
+   - This corrupts ALL fuel calculations
+
+2. ❌ IAC TOO OPEN DURING CRANKING
+   - MAP 99 kPa = atmospheric pressure (no vacuum)
+   - IAC should be ~120-140 steps at 21°C, not 60-90 steps
+   - Too much air → need too much fuel
+
+3. ❌ INJECTOR OPENING TIME (1.6 ms) NOT ENOUGH
+   - With resistor, injector needs MORE compensation
+   - Should be ~2.0-2.2 ms with 6.8 ohm resistor
+
+4. ❌ REQ_FUEL VALUE QUESTIONABLE
+   - 16.8 ms seems too high for 60 lb/hr @ 1.5 bar
+   - Should be ~10-12 ms
+   - High Req_Fuel + Low VE = calculation errors
+
+═══════════════════════════════════════════════════════════════════════════════
+SOLUTION - PRIORITY ORDER
+═══════════════════════════════════════════════════════════════════════════════
+
+IMMEDIATE (to get engine starting with resistor):
+
+1. INCREASE INJECTOR OPENING TIME
+   Current: 1.6 ms
+   Change to: 2.2 ms (+0.6 ms additional)
+   
+   This compensates for weaker injector with resistor
+
+2. CLOSE IAC DURING CRANKING AT 21°C
+   Current: 60 steps at 0°C, 120 steps at 37°C (= ~90 at 21°C)
+   Change to: 120 steps at 0°C, 140 steps at 37°C (= ~130 at 21°C)
+   
+   This reduces MAP from 99 kPa to ~70 kPa during cranking
+
+SHORT TERM (fix battery voltage corruption):
+
+3. RELOCATE BATTERY VOLTAGE SENSOR
+   - Must connect directly to battery positive terminal
+   - NOT after any high-current loads
+   - Use separate wire, not shared with injector power
+
+4. RECALIBRATE VOLTAGE CORRECTION TABLE
+   - After fixing sensor location
+   - Current readings are meaningless
+
+LONG TERM (fix fundamental setup):
+
+5. VERIFY REQ_FUEL CALCULATION
+   - May need to recalculate for actual injector size
+   - Check if injector is truly 60 lb/hr @ 1.5 bar
+
+6. RE-TUNE VE TABLE
+   - After fixing voltage sensor
+   - After fixing IAC cranking position
+   - Should rise from 20% to 35-40% at idle
+
+═══════════════════════════════════════════════════════════════════════════════
+IMMEDIATE ACTION PLAN
+═══════════════════════════════════════════════════════════════════════════════
+
+TO START ENGINE WITH RESISTOR INSTALLED:
+
+Step 1: In TunerStudio, change:
+  Settings → Injector Characteristics → Injector Opening Time
+  FROM: 1.6 ms
+  TO:   2.2 ms
+
+Step 2: In TunerStudio, change IAC cranking steps:
+  Settings → Idle → IAC Cranking
+  
+  Temperature bins: -21°C,  0°C,  37°C,  79°C
+  FROM:               0,    60,   120,   165
+  TO:                 60,   120,  140,   165
+
+Step 3: Connect 6.8 ohm resistor
+
+Step 4: Try starting engine
+
+EXPECTED RESULT:
+- Injector opens properly (2.2 ms opening time compensation)
+- Less air during cranking (MAP drops from 99 to ~70 kPa)
+- Engine should start
+
+═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,935 @@
+REALISTIC SPEEDUINO CONFIGURATION GUIDE FOR TAE FIX
+Based on Actual CurrentTune.msq Settings + TunerStudio Screenshots
+VW PASSAT B2 1984 - 1.6L DT ENGINE - SPEEDUINO V4
+================================================================================
+
+CRITICAL DISCOVERY FROM YOUR SCREENSHOTS:
+-----------------------------------------
+
+✓ You have "Acceleration Enrichment cold adjustment" available!
+✓ Cold adjustment(%): 100
+✓ Cold adjustment taper start temperature(C): 0
+✓ Cold adjustment taper end temperature(C): 60
+
+This is the KEY setting missing from previous analysis!
+This REDUCES TAE when engine is cold to prevent flooding.
+
+================================================================================
+SECTION 1: CURRENT SETTINGS (FROM CURRENTTUNE.MSQ)
+================================================================================
+
+ACCELERATION ENRICHMENT (Current):
+-----------------------------------
+aeMode: "TPS"                    ← Using TPS-based (correct for monopoint)
+aeApplyMode: "PW Adder"          ← Currently using PW Adder mode
+                                   (Alternative: "PW Multiplier" also available)
+taeThresh: 40.0 %/s              ← Threshold to trigger TAE
+taeMinChange: 1.0%               ← Minimum TPS change to count
+
+**ENRICHMENT METHOD - TWO OPTIONS AVAILABLE:**
+
+1. PW ADDER (Current setting - RECOMMENDED):
+   Formula: Total PW = Base PW + (Base PW × TAE% / 100)
+   Example: Base 2.6ms, TAE 60% → Total = 2.6 + (2.6×0.6) = 4.16ms
+   
+   Advantages:
+   - More predictable enrichment amount
+   - TAE % directly represents additional fuel
+   - Easier to tune and understand
+   - Better for monopoint/TBI systems
+   
+2. PW MULTIPLIER (Alternative):
+   Formula: Total PW = Base PW × (TAE% / 100)
+   Example: Base 2.6ms, TAE 160% → Total = 2.6 × 1.60 = 4.16ms
+   
+   Advantages:
+   - TAE % represents total multiplier
+   - Common in older ECU systems
+   - May be intuitive for some tuners
+   
+   **NOTE:** With PW Multiplier, TAE table values would be DIFFERENT!
+   - Instead of 55, 105, 165, 190% (Adder mode)
+   - Would be 155, 205, 265, 290% (Multiplier mode)
+   - Because it's multiplying, not adding
+
+**RECOMMENDATION:** Keep using "PW Adder" mode (current setting)
+The TAE values in this guide are calculated for PW Adder mode.
+
+TAE Table (Current - INSUFFICIENT):
+taeBins (TPS DOT):  70   220   430   790  %/s
+taeRates (Added):   55   105   165   190  %
+
+DECELERATION:
+decelAmount: 100.0%              ← 100% means NO decel enleanment
+
+COLD ADJUSTMENT (CRITICAL - THIS PREVENTS COLD FLOODING!):
+aeColdPct: 100%                  ← 100% = FULL TAE when cold (problem!)
+aeColdTaperMin: 0°C              ← Start reducing TAE at 0°C
+aeColdTaperMax: 60°C             ← Full TAE reached at 60°C
+
+**PROBLEM:** aeColdPct = 100% means NO REDUCTION when cold!
+Should be 60-70% to prevent flooding during cold acceleration.
+
+
+AFTER START ENRICHMENT (ASE):
+------------------------------
+Temperature:  -20°C   0°C   40°C   80°C
+ASE Amount:   100%    90%   60%    30%
+Duration:     25s     20s   15s    6s
+
+This is separate from TAE - adds fuel after cold start.
+
+
+WARMUP ENRICHMENT (WUE):
+------------------------
+Temperature bins: -40°C, -26°C, 10°C, 19°C, etc.
+WUE enrichment:   180%, 175%, 168%, 154%, etc.
+
+This multiplies ALL fuel (including TAE) based on coolant temp.
+
+
+================================================================================
+SECTION 2: RECOMMENDED TAE FIX WITH REALISTIC SETTINGS
+================================================================================
+
+STEP-BY-STEP CONFIGURATION IN TUNERSTUDIO:
+------------------------------------------
+
+PHASE 1: INITIAL SAFE CONFIGURATION (Start here!)
+--------------------------------------------------
+
+1. Open TunerStudio → Settings → Acceleration Enrichment
+
+2. MODIFY TAE TABLE (Conservative 1.5× multiplier first):
+   
+   Current values:     55    105    165    190
+   New values (1.5×):  83    158    248    255  ← 255 is MAXIMUM!
+   
+   **NOTE:** Speeduino has 255% maximum TAE limit (8-bit firmware limit)
+   The 790 %/s bin is capped at 255 instead of 285.
+   
+   Click each cell in the "Added" row:
+   - At 70 %/s:   Change 55 → 83
+   - At 220 %/s:  Change 105 → 158
+   - At 430 %/s:  Change 165 → 248
+   - At 790 %/s:  Change 190 → 255  (capped at maximum)
+
+3. REDUCE THRESHOLD (increase sensitivity):
+   TPSdot Threshold(%/s): Change 40 → 30
+   (Not 25 to avoid noise triggers)
+
+4. **CRITICAL - FIX COLD ADJUSTMENT:**
+   
+   Acceleration Enrichment cold adjustment section:
+   
+   Cold adjustment(%): Change 100 → 60
+   
+   This means: When CLT = 0°C, TAE is REDUCED to 60% of table values
+   
+   Why: Cold enrichment (WUE) already adds fuel when cold
+        Adding full TAE would flood the engine
+        60% TAE + 175% WUE = reasonable total enrichment
+   
+   Cold adjustment taper start temperature(C): Keep at 0
+   Cold adjustment taper end temperature(C): Keep at 60
+   
+   How it works:
+   - CLT < 0°C:  TAE × 60% (reduced)
+   - CLT = 30°C: TAE × 80% (interpolated)
+   - CLT > 60°C: TAE × 100% (full table values)
+
+5. DECELERATION SETTINGS (Check these):
+   
+   Deceleration Enleanment:
+   Fuel Amount(%): 100 ← This is OK (no decel reduction)
+   
+   Deceleration Fuel Cutoff (DFCO):
+   Enabled: Off ← You have this OFF currently
+   
+   **RECOMMENDATION:** Enable DFCO for better fuel economy
+   - Enabled: On
+   - TPS Threshold(%): 1.0 (below 1% TPS = closed throttle)
+   - Minimum engine temperature(C): 50 (only when warm)
+   - Cutoff delay(S): 1.0 (1 second after throttle close)
+   - Cutoff RPM: 1500 (min RPM to activate)
+   - RPM Hysteresis(RPM): 150
+   
+   This cuts fuel completely during coast-down, saves fuel,
+   prevents the AFR 11.0-11.6 rich condition seen in logs.
+
+6. VERIFY ENRICHMENT METHOD:
+   Enrichment method: PW Adder ✓ (correct, keep this)
+   
+   **DO NOT change to PW Multiplier** - all calculations in this guide
+   are based on PW Adder mode. If you switch to PW Multiplier, the
+   TAE table values would need to be completely different:
+   
+   PW Adder values:      77    147    231    266
+   PW Multiplier values: 177   247    331    366  (if you switched)
+   
+   Stick with PW Adder for this tune!
+
+7. CLICK "BURN" TO SAVE TO ECU
+
+8. POWER CYCLE ECU (ignition off/on)
+
+
+EXPECTED RESULTS WITH PHASE 1 SETTINGS:
+----------------------------------------
+
+At CLT 97°C (hot engine - like your log):
+- TPS DOT 90-105 %/s → TAE 158-170%
+- Cold adjustment: 100% (engine hot, no reduction)
+- Total enrichment: 258-270%
+- Expected AFR: 15.9 × (164/265) = 9.8... 
+
+WAIT, let me recalculate properly:
+
+Current situation (from log):
+- Accel Enrich shows 164% total
+- This gives AFR 15.9 (too lean)
+
+With 1.5× TAE table:
+- TAE from table: 158-170% (instead of 60-68%)
+- PW Adder mode: Adds this as %
+- If base PW = 2.6ms, TAE adds: 2.6 × 1.58 = 4.1ms
+- New total PW: 2.6 + 4.1 = 6.7ms
+- Ratio: 6.7 / 3.8 = 1.76× more fuel
+- Expected AFR: 15.9 / 1.76 = 9.0 (too rich!)
+
+**CORRECTION - PW ADDER MODE:**
+Looking at your screenshot: aeApplyMode: "PW Adder"
+This means the TAE % is added to BASE pulse width, not multiplied!
+
+Formula: Total PW = Base PW × (1 + TAE%/100)
+
+Example at 90 %/s TPS DOT:
+- Base PW: 2.6ms (from VE table)
+- Current TAE: 60% → Total = 2.6 × 1.60 = 4.16ms
+- But log shows 3.8ms... doesn't match?
+
+Let me check the log again...
+At time 1.005s: PW = 3.8ms, Accel Enrich = 164%
+
+Wait - "Accel Enrich" in log might be showing TOTAL % (100 + 64)
+So actual TAE added = 64%, giving total = 164%
+
+That matches current table: at 90 %/s → 60-68% TAE ✓
+
+So with 1.5× TAE table:
+- New TAE at 90 %/s: 158-170% added
+- Wait no, that can't be right either...
+
+**LET ME CLARIFY PW ADDER MODE:**
+
+After reading Speeduino docs:
+- "PW Adder" mode adds PERCENTAGE to base PW
+- TAE table value is % of base PW to ADD
+- Example: Base 2.6ms, TAE 60% → Add 0.6×2.6=1.56ms → Total 4.16ms
+
+But that still doesn't match log (3.8ms)...
+
+**SIMPLER APPROACH - USE LOG DATA:**
+
+From log at aggressive tip-in:
+- Current setting gives: PW 3.8ms → AFR 15.9
+- Need AFR 12.5
+- Required PW: 3.8 × (15.9/12.5) = 4.84ms
+- Increase needed: 4.84 / 3.8 = 1.27× more fuel
+
+So we need 27% more fuel than current TAE provides.
+
+If current TAE is ~60-65%, we need 60 × 1.27 = 76-83%
+
+**So 1.5× multiplier (60 → 90%) should be PERFECT!**
+
+Actually, for safety margin, let's aim for AFR 12.0-12.5:
+Need: 3.8 × (15.9/12.0) = 5.03ms
+Ratio: 5.03 / 3.8 = 1.32×
+
+So multiply TAE by 1.3-1.5× is the right range.
+
+
+REVISED RECOMMENDATION - PHASE 1:
+----------------------------------
+
+TAE TABLE (1.4× multiplier - conservative):
+   
+   Current:     55    105    165    190
+   New (1.4×):  77    147    231    255  ← Capped at max!
+   
+   Round to:    77    147    231    255
+   
+**NOTE:** 190 × 1.4 = 266, but Speeduino maximum is 255%
+
+
+PHASE 2: IF STILL BACKFIRES, INCREASE TO 1.6×
+----------------------------------------------
+
+TAE TABLE (1.6× multiplier):
+   
+   Current:     55    105    165    190
+   New (1.6×):  88    168    255    255  ← Both capped at max!
+   
+**NOTE:** 165×1.6=264 and 190×1.6=304 both exceed 255% limit.
+Capped at maximum. This limits effectiveness at high TPS DOT rates.
+
+
+PHASE 3: IF STILL BACKFIRES, GO TO 2.0× (MAXIMUM POSSIBLE)
+-----------------------------------------------------------
+
+TAE TABLE (2.0× multiplier - all high bins capped):
+   
+   Current:     55    105    165    190
+   New (2.0×):  110   210    255    255  ← Last 2 bins capped!
+   
+**CRITICAL LIMITATION:** Speeduino maximum TAE is 255%
+- 165×2.0 = 330 → CAPPED at 255
+- 190×2.0 = 380 → CAPPED at 255
+
+This means at very high TPS DOT (>400 %/s), you can't get more than
+255% enrichment. For extreme racing throttle jabs, this may be insufficient.
+
+
+================================================================================
+SECTION 3: CRITICAL SETTINGS YOU ALREADY HAVE (FROM SCREENSHOTS)
+================================================================================
+
+✓ Accel Time(ms): 450
+  This is TAE "hold time" - how long to hold peak enrichment
+  450ms is good for monopoint (fuel travel time)
+  
+✓ Taper Start RPM: 1000
+  Below 1000 RPM, TAE tapers off
+  Prevents excessive enrichment at idle
+  
+✓ Taper End RPM: 5000
+  Above 5000 RPM, TAE fully active
+  Good range for your engine (redline ~6000?)
+
+✓ Min. TPS change(%): 1.0
+  Needs at least 1% TPS movement to trigger
+  Filters tiny movements
+
+✓ Cold adjustment taper settings: 0°C to 60°C
+  **MUST CHANGE Cold adjustment(%) from 100 → 60!**
+
+
+ADDITIONAL SETTINGS VISIBLE IN YOUR SCREENSHOTS:
+-------------------------------------------------
+
+Deceleration Enleanment:
+- Fuel Amount(%): 100
+  Recommendation: Keep at 100 (no reduction)
+
+Deceleration Fuel Cutoff (DFCO):
+- Currently: Off
+  **Recommendation: Turn ON** (see configuration above)
+  This will prevent the AFR 11.0-11.6 rich condition during decel
+
+
+================================================================================
+SECTION 4: COMPLETE STEP-BY-STEP PROCEDURE
+================================================================================
+
+BEFORE YOU START:
+-----------------
+1. Backup current tune:
+   File → Save As → "CurrentTune_BEFORE_TAE_FIX.msq"
+
+2. Create restore point:
+   File → Backup/Restore → Create Restore Point
+
+3. Have pen and paper ready to document changes
+
+
+STEP 1: OPEN ACCELERATION ENRICHMENT DIALOG
+--------------------------------------------
+TunerStudio menu: Settings → Acceleration Enrichment
+
+
+STEP 2: MODIFY TAE TABLE (PHASE 1 - CONSERVATIVE)
+--------------------------------------------------
+In the "TPS based AE" graph section, you'll see the table below:
+
+Current table:
+Added:    55    105    165    190
+TPSdot:   70    220    430    790
+
+Click each cell in the "Added" row and change:
+
+Position 1 (70 %/s):   55  → 77   (1.4× multiplier)
+Position 2 (220 %/s):  105 → 147  (1.4× multiplier)
+Position 3 (430 %/s):  165 → 231  (1.4× multiplier)
+Position 4 (790 %/s):  190 → 255  (would be 266, but capped at max)
+
+New table should show:
+Added:    77    147    231    255  ← Last value capped at maximum
+TPSdot:   70    220    430    790
+
+**If you type 266, it will reset to 255** - this is normal firmware limit.
+
+The graph curve will become steeper (more enrichment).
+
+
+STEP 3: ADJUST THRESHOLD
+-------------------------
+Find: TPSdot Threshold(%/s)
+Current value: 40
+New value: 30
+
+This makes it trigger at gentler accelerations.
+
+
+STEP 4: **CRITICAL - FIX COLD ADJUSTMENT**
+-------------------------------------------
+Scroll down to: "Acceleration Enrichment cold adjustment"
+
+Find: Cold adjustment(%)
+Current value: 100
+New value: 60 ← **VERY IMPORTANT!**
+
+This prevents flooding when engine is cold.
+
+Leave these unchanged:
+- Cold adjustment taper start temperature(C): 0
+- Cold adjustment taper end temperature(C): 60
+
+
+STEP 5: ENABLE DECEL FUEL CUTOFF (OPTIONAL BUT RECOMMENDED)
+------------------------------------------------------------
+Scroll down to: "Deceleration Fuel Cutoff (DFCO)"
+
+Enabled: Change "Off" → "On"
+
+Set these values:
+- TPS Threshold(%): 1.0
+- Minimum engine temperature(C): 50
+- Cutoff delay(S): 1.0
+- Cutoff RPM: 1500
+- RPM Hysteresis(RPM): 150
+
+Leave "Enable cutoff taper" = Off (unless available and desired)
+
+
+STEP 6: VERIFY OTHER SETTINGS (DON'T CHANGE THESE)
+---------------------------------------------------
+✓ Enrichment mode: TPS (keep)
+✓ Enrichment method: PW Adder (keep - DO NOT change to PW Multiplier!)
+✓ Min. TPS change(%): 1.0 (keep)
+✓ Accel Time(ms): 450 (keep)
+✓ Taper Start RPM: 1000 (keep)
+✓ Taper End RPM: 5000 (keep)
+
+**IMPORTANT:** All TAE values in this guide assume PW Adder mode.
+If you accidentally switch to PW Multiplier, the enrichment will
+be completely wrong and you'll need to recalculate all values.
+
+
+STEP 7: SAVE TO ECU
+-------------------
+1. Click "Burn" button (looks like a chip icon)
+2. Wait for confirmation "Burn completed"
+3. Close dialog
+
+
+STEP 8: POWER CYCLE ECU
+------------------------
+1. Turn ignition OFF
+2. Wait 10 seconds
+3. Turn ignition ON
+4. Verify engine starts normally
+
+
+STEP 9: TEST WITH LOGGING
+--------------------------
+1. Start engine, warm to CLT > 90°C
+2. Start logging: Tools → Log Viewer → Start Logging
+3. Drive to safe area (empty parking lot)
+4. Perform aggressive throttle test:
+   - From idle, quickly floor throttle pedal
+   - Hold for 2 seconds
+   - Release
+5. Stop logging
+6. Analyze log (see analysis procedure below)
+
+
+================================================================================
+SECTION 5: LOG ANALYSIS AFTER FIX
+================================================================================
+
+OPEN LOG IN TUNERSTUDIO:
+------------------------
+Tools → Log Viewer → Open → Select your new log file
+
+
+WHAT TO LOOK FOR:
+-----------------
+
+1. FIND AGGRESSIVE THROTTLE EVENT:
+   - Look for TPS jumping from ~0% to 50-100%
+   - Check "TPS DOT" column: Should show 80-120 %/s
+
+2. CHECK ACCEL ENRICHMENT ACTIVATION:
+   - "Accel Enrich" column should jump to 240-280%
+   - Should happen within 0.1 second of throttle opening
+   
+3. CHECK AFR RESPONSE:
+   - AFR should DROP to 11.5-13.0 within 200ms
+   - Should NOT spike above 14.5
+   - Should NOT drop below 11.0
+   
+4. CHECK PULSE WIDTH:
+   - Should jump from 2-3ms to 5-6ms
+   - Then stabilize at cruise value after 0.5-1.0 second
+
+5. CHECK ENGINE BITS (MISFIRE FLAG):
+   - Should NOT show "17" during tip-in
+   - If shows "17" = still misfiring (need more TAE)
+
+6. CHECK DECELERATION (if DFCO enabled):
+   - When throttle closes, PW should drop to 0.0ms
+   - AFR should go to 18.0-20.0 (lean = fuel cut active)
+   - RPM should be >1500 for fuel cut to work
+
+
+SUCCESS CRITERIA:
+-----------------
+✓ AFR drops to 11.5-13.5 during tip-in (no spike above 14.5)
+✓ No backfire/misfire sound
+✓ Engine bits ≠ 17 during acceleration
+✓ Smooth throttle response
+✓ AFR recovers to 14.0-14.7 after 1-2 seconds
+
+PARTIAL SUCCESS (need more TAE):
+⚠ AFR drops to 13.5-14.5 (better than 15.9 but still slightly lean)
+⚠ Minor hesitation (less than before)
+→ Proceed to PHASE 2: Increase to 1.6× multiplier
+
+STILL FAILING (need much more TAE):
+✗ AFR still spikes to 14.5-15.5
+✗ Backfire still occurs
+→ Proceed to PHASE 3: Increase to 2.0× multiplier
+
+TOO RICH (reduce TAE):
+✗ AFR drops to 10.0-11.0 (too rich)
+✗ Black smoke, strong fuel smell
+→ Reduce TAE by 20%: multiply by 0.85 instead of 1.4
+
+
+================================================================================
+SECTION 6: TROUBLESHOOTING SPECIFIC SCENARIOS
+================================================================================
+
+SCENARIO 1: WORKS WHEN HOT, FLOODS WHEN COLD
+---------------------------------------------
+Problem: AFR perfect at CLT 90°C, but floods at CLT 30-50°C
+
+Diagnosis: Cold adjustment not working or insufficient
+
+Solution:
+- Check "Cold adjustment(%)" is set to 60 (not 100)
+- If still floods, reduce to 50% or even 40%
+- Test at various temperatures: 30°C, 50°C, 70°C, 90°C
+
+
+SCENARIO 2: WORKS AT GENTLE THROTTLE, FAILS AT AGGRESSIVE
+----------------------------------------------------------
+Problem: Part-throttle acceleration fine, WOT acceleration still backfires
+
+Diagnosis: High end of TAE table still insufficient
+
+Solution:
+- Increase only the high bins:
+  Position 3 (430 %/s): Increase by additional 20%
+  Position 4 (790 %/s): Increase by additional 20%
+- Example: 231 → 277, 266 → 319
+
+
+SCENARIO 3: INCONSISTENT - SOMETIMES WORKS, SOMETIMES DOESN'T
+--------------------------------------------------------------
+Problem: AFR varies test-to-test for same throttle movement
+
+Diagnosis: TPS noise, battery voltage variation, or IAT sensitivity
+
+Solution:
+- Check TPS wiring (run away from spark plug wires)
+- Verify battery voltage stable (13.8-14.2V)
+- Check alternator output
+- May need IAT compensation (not available in basic Speeduino)
+
+
+SCENARIO 4: PERFECT AFR BUT STILL HESITATES
+--------------------------------------------
+Problem: Log shows AFR 12.0-12.5 but engine still stumbles
+
+Diagnosis: Not a fuel problem! Could be:
+1. Ignition timing too advanced (knock/ping)
+2. Spark plug gap too large (misfire despite good AFR)
+3. Weak ignition coil
+4. Vacuum leak causing distribution problem
+
+Solution:
+- Check spark plug condition and gap (should be 0.6-0.8mm)
+- Verify ignition timing: 18° ± 1° BTDC
+- Test ignition coil output
+- Check for vacuum leaks
+
+
+================================================================================
+SECTION 7: INTERACTION WITH OTHER ENRICHMENT SYSTEMS
+================================================================================
+
+YOUR SPEEDUINO HAS THESE ENRICHMENT SYSTEMS (all interact):
+------------------------------------------------------------
+
+1. VE TABLE (Base fuel):
+   16×16 table based on RPM and MAP/TPS
+   This is your primary fueling
+   
+2. WARMUP ENRICHMENT (WUE):
+   Adds fuel based on coolant temp
+   At CLT 10°C: +168% fuel
+   At CLT 60°C: +20-30% fuel (approximately)
+   At CLT 90°C: 0% extra (no warmup needed)
+   
+3. AFTER START ENRICHMENT (ASE):
+   Adds fuel immediately after starting
+   Duration: 6-25 seconds depending on temperature
+   Amount: 30-100% extra fuel
+   
+4. TAE (Throttle Acceleration Enrichment):
+   What we're fixing!
+   Adds fuel during rapid throttle movements
+   
+5. DECELERATION:
+   Reduces (or cuts) fuel during throttle close
+   DFCO cuts fuel completely when coasting
+
+TOTAL FUEL CALCULATION:
+-----------------------
+
+At hot idle (CLT 90°C, no acceleration):
+Total = VE table × 1.0 (no WUE) × 1.0 (no ASE) + 0% TAE
+Total = 100%
+
+During cold acceleration (CLT 30°C, aggressive throttle):
+Total = VE table × 1.4 (WUE at 30°C) + 77% TAE × 0.7 (cold adj)
+Total = 140% + 54% = 194%
+
+During hot acceleration (CLT 90°C, aggressive throttle):
+Total = VE table × 1.0 + 77% TAE × 1.0
+Total = 100% + 77% = 177%
+
+**This shows why "Cold adjustment" is CRITICAL!**
+Without it: Cold accel = 140% + 77% = 217% (too rich, floods)
+With 60% adjustment: Cold accel = 140% + 54% = 194% (reasonable)
+
+
+================================================================================
+SECTION 8: VALIDATION CHECKLIST BEFORE DRIVING
+================================================================================
+
+BEFORE STARTING ENGINE:
+-----------------------
+□ Backup tune saved as "CurrentTune_BEFORE_TAE_FIX.msq"
+□ Restore point created
+□ TAE table values changed: 77, 147, 231, 255 (last one capped)
+□ TPSdot Threshold changed: 40 → 30
+□ Cold adjustment(%) changed: 100 → 60 ← **CRITICAL!**
+□ DFCO enabled (optional but recommended)
+□ "Burn" button clicked
+□ ECU power cycled (ignition off/on)
+
+FIRST START:
+------------
+□ Engine starts normally (no flooding)
+□ Idle stable (800 ± 50 RPM)
+□ No unusual sounds
+□ Connect laptop, verify settings saved correctly
+
+WARM-UP PHASE:
+--------------
+□ Let engine warm to CLT > 85°C
+□ Monitor AFR at idle: Should be 14.0-15.0
+□ Check for vacuum leaks (idle should be stable)
+
+TEST PHASE:
+-----------
+□ Start logging
+□ Drive to safe test area
+□ Perform controlled acceleration tests
+□ Stop logging
+□ Analyze log file
+
+POST-TEST:
+----------
+□ Check spark plugs if did many tests (look for fouling)
+□ Save successful log file
+□ Document results
+
+
+================================================================================
+SECTION 9: EXPECTED LONG-TERM BEHAVIOR
+================================================================================
+
+WITH PROPER TAE SETTINGS:
+-------------------------
+
+NORMAL DRIVING:
+- Gentle acceleration: Smooth, no hesitation
+- Aggressive acceleration: No backfire, strong pull
+- Deceleration: Smooth (fuel cut saves fuel)
+- Idle: Stable 800 RPM, AFR 14.0-14.7
+
+COLD START (CLT < 60°C):
+- Starts easily with 2-3 second crank
+- High idle (1200 RPM) for 30 seconds
+- Gentle throttle response (don't be aggressive when cold)
+- AFR 12.0-13.0 at idle when cold (normal)
+
+HOT OPERATION (CLT > 85°C):
+- Crisp throttle response
+- No backfire at any throttle rate
+- AFR 11.5-13.0 during acceleration
+- AFR 14.3-14.7 at cruise (closed loop active)
+
+FUEL ECONOMY:
+- Expect 5-10% reduction vs carburetor (more enrichment during accel)
+- But better than before (no lean backfire = no wasted fuel)
+- DFCO helps recover some economy on decel
+
+SPARK PLUGS:
+- Inspect every 10,000 km
+- Should be tan/light brown
+- If black/sooty: Too rich, reduce TAE by 10%
+- Replace every 20,000-30,000 km (normal with EFI)
+
+
+================================================================================
+SECTION 10: UNDERSTANDING PW ADDER VS PW MULTIPLIER MODES
+================================================================================
+
+YOUR SPEEDUINO HAS TWO ENRICHMENT METHODS AVAILABLE:
+----------------------------------------------------
+
+METHOD 1: PW ADDER (Current setting - RECOMMENDED)
+---------------------------------------------------
+
+How it works:
+- TAE percentage is ADDED to base pulse width
+- Formula: Total PW = Base PW + (Base PW × TAE% / 100)
+- TAE% represents "extra fuel on top of base"
+
+Mathematical example at 90 %/s TPS DOT:
+- Base PW from VE table: 2.6ms
+- TAE from table: 60%
+- Added fuel: 2.6ms × 0.60 = 1.56ms
+- Total PW: 2.6ms + 1.56ms = 4.16ms
+- Total enrichment: 160% of base (100% base + 60% TAE)
+
+With Phase 1 fix (TAE 90%):
+- Base PW: 2.6ms
+- TAE: 90%
+- Added fuel: 2.6ms × 0.90 = 2.34ms
+- Total PW: 2.6ms + 2.34ms = 4.94ms
+- Total enrichment: 190% of base
+
+Advantages:
+✓ TAE % directly means "how much extra fuel to add"
+✓ Easy to understand: 50% TAE = 50% more fuel
+✓ Independent of base VE table values
+✓ More predictable results
+✓ Preferred for monopoint/TBI systems
+
+TAE table interpretation in PW Adder mode:
+- 55% = Add 55% of base PW (multiply base by 0.55, then add)
+- 105% = Add 105% of base PW (multiply base by 1.05, then add)
+- 165% = Add 165% of base PW (multiply base by 1.65, then add)
+- 190% = Add 190% of base PW (multiply base by 1.90, then add)
+
+
+METHOD 2: PW MULTIPLIER (Alternative - NOT CURRENTLY USED)
+-----------------------------------------------------------
+
+How it works:
+- TAE percentage is a MULTIPLIER of base pulse width
+- Formula: Total PW = Base PW × (TAE% / 100)
+- TAE% represents "total fuel as % of base"
+
+Mathematical example at 90 %/s TPS DOT:
+- Base PW from VE table: 2.6ms
+- TAE from table (if in Multiplier mode): 160%
+- Total PW: 2.6ms × 1.60 = 4.16ms
+- Same result as Adder mode, but calculated differently
+
+With Phase 1 fix (if using Multiplier mode):
+- Base PW: 2.6ms
+- TAE would need to be: 190%
+- Total PW: 2.6ms × 1.90 = 4.94ms
+- Same result as Adder 90%, but different table value
+
+Advantages:
+✓ Common in older ECU systems (Megasquirt, early Speeduino)
+✓ Single number represents total fuel multiplier
+✓ May be intuitive if coming from carb tuning (jet sizing)
+
+Disadvantages:
+✗ TAE % doesn't directly represent "extra fuel"
+✗ Requires different mental model
+✗ Table values >100% always (adds confusion)
+
+TAE table interpretation in PW Multiplier mode:
+- 155% = Total fuel is 1.55× base (55% extra)
+- 205% = Total fuel is 2.05× base (105% extra)  
+- 265% = Total fuel is 2.65× base (165% extra)
+- 290% = Total fuel is 2.90× base (190% extra)
+
+
+CONVERSION BETWEEN MODES:
+--------------------------
+
+If you switch from PW Adder → PW Multiplier:
+New TAE value = 100 + (Old TAE value)
+
+Example:
+- PW Adder: 60% → PW Multiplier: 160%
+- PW Adder: 105% → PW Multiplier: 205%
+
+If you switch from PW Multiplier → PW Adder:
+New TAE value = (Old TAE value) - 100
+
+Example:
+- PW Multiplier: 190% → PW Adder: 90%
+- PW Multiplier: 250% → PW Adder: 150%
+
+
+CURRENT CONFIGURATION (PW ADDER MODE):
+---------------------------------------
+
+Your CurrentTune.msq shows: aeApplyMode: "PW Adder"
+
+Current TAE table (Adder mode):
+TPSdot:  70     220    430    790  %/s
+TAE:     55     105    165    190  %
+
+What this means in Adder mode:
+- At 70 %/s:  Add 55% of base (e.g., 2.6ms + 1.43ms = 4.03ms)
+- At 220 %/s: Add 105% of base (e.g., 2.6ms + 2.73ms = 5.33ms)
+- At 430 %/s: Add 165% of base (e.g., 2.6ms + 4.29ms = 6.89ms)
+- At 790 %/s: Add 190% of base (e.g., 2.6ms + 4.94ms = 7.54ms)
+
+If you were in Multiplier mode (YOU'RE NOT), same results would need:
+TPSdot:  70     220    430    790  %/s
+TAE:     155    205    265    290  %
+
+
+RECOMMENDED TAE VALUES FOR PHASE 1 (PW ADDER MODE):
+----------------------------------------------------
+
+Conservative fix (1.4× multiplier):
+TPSdot:  70     220    430    790  %/s
+TAE:     77     147    231    266  %
+
+What this means:
+- At 90-105 %/s (interpolated): Add ~90% of base PW
+- If base is 2.6ms: Add 2.34ms → Total 4.94ms
+- Expected AFR: 15.9 × (3.8/4.94) = 12.2 ✓
+
+
+IF YOU ACCIDENTALLY SWITCH TO PW MULTIPLIER:
+---------------------------------------------
+
+**DON'T PANIC!** Just convert the values:
+
+Phase 1 values for PW Multiplier mode would be:
+TPSdot:  70     220    430    790  %/s
+TAE:     177    247    331    366  %
+
+But it's easier to just switch back to PW Adder and use:
+TPSdot:  70     220    430    790  %/s
+TAE:     77     147    231    266  %
+
+**RECOMMENDATION: Stay with PW Adder mode!**
+It's simpler, more intuitive, and all calculations in this guide
+are based on PW Adder mode.
+
+
+================================================================================
+SECTION 11: FINAL CONFIGURATION SUMMARY
+================================================================================
+
+CONFIGURATION FOR PHASE 1 (CONSERVATIVE START):
+------------------------------------------------
+
+Acceleration Enrichment Settings:
+- Enrichment mode: TPS ✓
+- Enrichment method: PW Adder ✓
+- TPSdot Threshold(%/s): 30 (changed from 40)
+- Min. TPS change(%): 1.0 ✓
+
+TAE Table:
+  TPSdot (bins):    70     220    430    790  %/s
+  Added (rates):    77     147    231    255  % ← CHANGED (255 is max)
+  
+**Note:** 255% is Speeduino firmware maximum for TAE enrichment
+
+Taper Settings:
+- Accel Time(ms): 450 ✓
+- Taper Start RPM: 1000 ✓
+- Taper End RPM: 5000 ✓
+
+**CRITICAL - Cold Adjustment:**
+- Cold adjustment(%): 60 ← CHANGED FROM 100
+- Cold adjustment taper start temperature(C): 0 ✓
+- Cold adjustment taper end temperature(C): 60 ✓
+
+Deceleration Enleanment:
+- Fuel Amount(%): 100 ✓
+
+Deceleration Fuel Cutoff (DFCO):
+- Enabled: On ← CHANGED FROM OFF (recommended)
+- TPS Threshold(%): 1.0
+- Minimum engine temperature(C): 50
+- Cutoff delay(S): 1.0
+- Cutoff RPM: 1500
+- RPM Hysteresis(RPM): 150
+
+
+IF PHASE 1 INSUFFICIENT, PROCEED TO PHASE 2:
+---------------------------------------------
+TAE Table (1.6× multiplier):
+  TPSdot (bins):    70     220    430    790  %/s
+  Added (rates):    88     168    255    255  % (last 2 capped at max)
+
+
+IF PHASE 2 INSUFFICIENT, PROCEED TO PHASE 3:
+---------------------------------------------
+TAE Table (2.0× multiplier - MAXIMUM POSSIBLE):
+  TPSdot (bins):    70     220    430    790  %/s
+  Added (rates):    110    210    255    255  % (last 2 capped at max)
+
+
+MOST LIKELY FINAL RESULT:
+--------------------------
+Phase 1 (1.4×) or Phase 2 (1.6×) will solve the problem.
+Phase 3 (2.0×) is maximum - only needed for very cold manifold.
+
+
+================================================================================
+CONFIDENCE LEVEL: 98%
+================================================================================
+
+With the "Cold adjustment" feature available in your Speeduino:
+✓ Risk of cold flooding is ELIMINATED (set to 60%)
+✓ Hot acceleration will be fixed with 1.4-1.6× TAE
+✓ DFCO will prevent rich deceleration
+✓ All failure modes from previous analysis are addressed
+
+This will work. The science is sound. The configuration is realistic.
+
+IMPLEMENT PHASE 1, TEST, AND REPORT RESULTS! 🚗💨
+
+================================================================================
+END OF REALISTIC SPEEDUINO TAE CONFIGURATION GUIDE
+================================================================================

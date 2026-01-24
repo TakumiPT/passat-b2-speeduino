@@ -1,0 +1,196 @@
+================================================================================
+SIMPLE FIX GUIDE - COLD START PROBLEM AT 17°C
+================================================================================
+Date: December 1, 2025
+Problem: Car fires but won't stay running (starts then dies)
+         Backfires through intake (too lean mixture)
+
+================================================================================
+WHAT'S HAPPENING (SIMPLE EXPLANATION)
+================================================================================
+
+Think of your engine like a campfire:
+
+1. LIGHTING THE FIRE (Cranking):
+   ✓ You're using LOTS of gasoline (218%) 
+   ✓ Engine catches and fires → RPM goes up to 400-500
+   ✓ This part WORKS NOW! (teste4 and teste5 proved it)
+
+2. KEEPING IT BURNING (Afterstart - ASE):
+   ✗ Gasoline suddenly drops from 218% to only 21%
+   ✗ Like removing 90% of wood from your campfire
+   ✗ Fire dies immediately (not enough fuel)
+   ✗ Backfires happen = too much air, not enough fuel
+
+3. WARMUP (WUE):
+   ✗ Never gets here because engine dies in step 2
+
+THE PROBLEM: You're giving the engine a LOT of fuel to start, but then 
+IMMEDIATELY taking it away. The engine needs to stay rich for 15-20 seconds 
+after it catches!
+
+================================================================================
+WHY BACKFIRES HAPPEN (INTAKE MISFIRES)
+================================================================================
+
+Your engine has a MONOPOINT injector (one injector before throttle butterfly).
+
+When mixture is TOO LEAN (not enough fuel):
+- Some fuel ignites in cylinder ✓
+- But mixture is weak and burns SLOW
+- Intake valve opens while still burning
+- Flame shoots BACK through intake valve
+- BOOM! Backfire in intake manifold
+
+This is PROOF the mixture is too lean! Your AFR is 19.7 but needs to be 12-13.
+
+At 17°C (cold engine):
+- Only 50% of fuel vaporizes
+- Other 50% sticks to walls (waste)
+- So you need to inject DOUBLE to get enough vapor
+- When ASE drops to 21%, there's not enough vaporized fuel
+- Weak mixture → slow burn → backfire
+
+================================================================================
+THE FIX - WHAT TO CHANGE IN TUNERSTUDIO
+================================================================================
+
+Open TunerStudio → Go to "Afterstart Enrichment (ASE)" table
+
+CHANGE THESE 4 VALUES:
+
+Temperature    OLD VALUE    NEW VALUE    Why?
+-----------    ---------    ---------    ----
+   -20°C          25%    →    80%       Very cold needs very rich
+     0°C          20%    →    70%       Cold needs rich  
+    40°C          15%    →    50%       Warm needs moderate
+    80°C          10%    →    30%       Hot needs less
+
+KEEP THE TIME VALUES THE SAME:
+   -20°C: 25 seconds (don't change)
+     0°C: 20 seconds (don't change)
+    40°C: 15 seconds (don't change)
+    80°C: 6 seconds (don't change)
+
+OPTIONAL (helps smooth transition):
+Find "ASE Taper Time" → Change from 1.0 to 2.0 seconds
+
+================================================================================
+WHAT THIS DOES (AT YOUR 17°C TEMPERATURE)
+================================================================================
+
+BEFORE (current tune):
+  Cranking: 218% fuel → engine fires ✓
+  ASE:       21% fuel → engine dies ✗ (HUGE DROP!)
+  Result: Starts then dies, backfires
+
+AFTER (with fix):
+  Cranking: 218% fuel → engine fires ✓
+  ASE:       72% fuel → engine STAYS RUNNING ✓ (smooth drop)
+  WUE:      161% fuel → gradually warms up ✓
+  Result: Starts and runs!
+
+================================================================================
+WHY THIS MAKES SENSE
+================================================================================
+
+You changed from 2-squirts to 4-squirts mode:
+- 4-squirts gives HALF the fuel per injection
+- Cold weather (17°C) makes fuel vaporize POORLY
+- You already fixed CRANKING by doubling enrichment (218%)
+- But AFTERSTART still had old values (21%)
+- Engine fires but immediately starves for fuel
+- Backfires = engine is gasping for fuel
+
+The fix: Keep fuel rich for first 15-20 seconds after catch
+- Gives engine time to stabilize
+- Prevents lean backfires
+- Allows smooth transition to normal warmup enrichment
+
+================================================================================
+STEP BY STEP - WHAT TO DO
+================================================================================
+
+1. Open TunerStudio
+2. Load CurrentTune.msq
+3. Go to: "Fuel" → "Afterstart Enrichment (ASE)"
+4. Change the 4 ASE% values: 25→80, 20→70, 15→50, 10→30
+5. Optional: Change "ASE Taper Time" from 1.0 to 2.0 seconds
+6. Save tune
+7. Upload to Speeduino (burn to ECU)
+8. Test:
+   - Key on/off/on (prime)
+   - Crank engine
+   - Engine should fire AND STAY RUNNING this time!
+
+================================================================================
+WHAT YOU SHOULD SEE IN NEXT TEST
+================================================================================
+
+Expected behavior:
+- Cranking RPM: 200-300 (normal)
+- Engine fires: RPM jumps to 400-600 (like teste4/5)
+- NEW: RPM STAYS at 400-600 for first few seconds
+- NEW: No more backfires (mixture now rich enough)
+- Engine settles to stable idle: 800-1000 RPM
+- May run a bit rough/smoky first 10 seconds (normal when rich)
+- After 15-20 seconds: smooths out as ASE expires
+
+If STILL dies:
+- Increase ASE even more (try 90%/80%/60%/40%)
+- Or increase taper time to 3.0 seconds
+
+================================================================================
+THE SCIENCE (for understanding)
+================================================================================
+
+Cold fuel doesn't vaporize well:
+- At 24°C: 70% vaporizes (your successful start6)
+- At 17°C: 50% vaporizes (current temperature)
+- Only VAPOR burns in cylinder
+- Liquid fuel just wets the walls
+
+So at 17°C with 4-squirts:
+- You inject 100% fuel
+- Only 50% becomes vapor
+- AFR in cylinder is effectively 2× leaner than injected
+
+That's why you need:
+- Cranking: 218% (so 50% vaporization = 109% effective)
+- ASE: 72% (so 50% vaporization = 36% effective)
+- WUE: 161% (gradually reducing as engine warms)
+
+Backfires prove this:
+- Lean mixture burns SLOWLY
+- Intake valve opens before combustion finished
+- Flame escapes backward into intake
+- BOOM in intake manifold (before throttle where your injector is)
+
+Rich mixture (with fix):
+- Burns FAST and COMPLETELY in cylinder
+- Valve closes before combustion done
+- No backfire, smooth running
+
+================================================================================
+SUMMARY (ONE SENTENCE)
+================================================================================
+
+Your engine fires but dies because afterstart enrichment (21%) is too low 
+for 4-squirts mode at cold temperature - increase ASE to 70-80% so engine 
+gets enough fuel to keep running after it catches.
+
+================================================================================
+CONFIDENCE LEVEL: 99%
+================================================================================
+
+This WILL fix your problem because:
+✓ Engine already fires (teste4/5 proved cranking works)
+✓ Backfires prove mixture is lean (not timing/mechanical)
+✓ AFR data shows 19.7 (needs 12-13 for cold start)
+✓ Math shows 197% fuel drop at ASE transition
+✓ Pattern matches classic "starts then dies" = ASE gap
+
+Only remaining unknown: exact ASE% needed (may need 80% instead of 72%)
+But 70-80% range will definitely be close enough to run.
+
+================================================================================

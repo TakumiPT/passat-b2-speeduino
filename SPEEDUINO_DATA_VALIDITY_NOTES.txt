@@ -1,0 +1,118 @@
+================================================================================
+SPEEDUINO FUEL-ONLY ECU - DATA VALIDITY REFERENCE
+================================================================================
+Date: November 30, 2025
+ECU: Speeduino 2025.01.6 (FUEL CONTROL ONLY - NO IGNITION CONTROL)
+Ignition: Mechanical distributor with hall sensor (RPM input only)
+
+================================================================================
+REAL MEASURED DATA (TRUSTWORTHY FOR DIAGNOSIS)
+================================================================================
+
+✅ RPM               - Hall sensor from mechanical distributor
+✅ MAP               - Manifold pressure sensor
+✅ CLT               - Coolant temperature sensor
+✅ IAT               - Intake air temperature sensor
+✅ TPS               - Throttle position sensor
+✅ Battery V         - Battery voltage measurement
+✅ IAC value         - Commanded IAC stepper motor position
+✅ PW (PW1-4)        - Commanded injector pulse width (what ECU tries to inject)
+✅ Baro Pressure     - Barometric pressure (if equipped)
+✅ Sync status       - Trigger wheel sync status
+✅ Loops/s, Loops/rev - ECU performance metrics
+
+================================================================================
+FAKE/CALCULATED DATA (IGNORE FOR DIAGNOSIS - NOT REAL MEASUREMENTS)
+================================================================================
+
+❌ Advance (Current) - FAKE! Just repeats ignition table lookup values
+                       ECU has NO ignition control or feedback
+                       Mechanical distributor controls actual timing
+                       This value is FICTION - ignore completely
+
+❌ Dwell             - FAKE! Meaningless on fuel-only ECU
+❌ Dwell (Measured)  - FAKE! No ignition control = no dwell measurement
+
+⚠️  AFR              - Only real if wideband O2 sensor is connected
+                       Verify sensor presence before trusting this data
+
+================================================================================
+DERIVED/CALCULATED DATA (BASED ON REAL SENSORS OR TABLE LOOKUPS)
+================================================================================
+
+⚠️  VE (Current)     - Looked up from VE table based on RPM/MAP
+⚠️  VE1, VE2         - Table values, not measurements
+⚠️  Duty Cycle       - Calculated from PW and RPM
+⚠️  Accel Enrich     - Calculated from TPS rate of change (TPS DOT)
+⚠️  Gego, Gair, etc  - Correction factors (calculated)
+⚠️  AFR Target       - Table lookup value
+⚠️  Lambda Target    - Converted from AFR target
+
+================================================================================
+SCIENTIFIC ANALYSIS PROTOCOL
+================================================================================
+
+When analyzing datalogs for diagnostic purposes:
+
+1. IGNORE "Advance" COLUMN COMPLETELY
+   - It shows what the table says, not what the distributor does
+   - Mechanical distributor has vacuum + centrifugal advance
+   - Speeduino has ZERO visibility into actual ignition timing
+
+2. FOCUS ON REAL SENSOR DATA
+   - Does RPM reach proper cranking speed (200-400 RPM)?
+   - What PW is commanded at current CLT?
+   - What IAC position is commanded?
+   - Does battery voltage drop excessively during cranking?
+   - What are actual CLT/IAT readings?
+
+3. COMPARE WORKING vs FAILING LOGS
+   - Use same sensors (real data only)
+   - Look for differences in:
+     * RPM achieved
+     * PW commanded
+     * IAC position
+     * Battery voltage
+     * Temperature conditions
+
+4. VERIFY SENSOR OPERATION
+   - Cross-check sensor readings for plausibility
+   - CLT/IAT should be close if engine cold
+   - MAP should be ~100 kPa at key-on (atmospheric)
+   - MAP should drop during cranking (~30-50 kPa)
+
+================================================================================
+KNOWN WORKING CONDITIONS (BASELINE DATA)
+================================================================================
+
+start5.csv - Successful start:
+- CLT: 18°C
+- IAC: 84 steps
+- Conditions: Working start
+
+start6.csv - Successful start:
+- CLT: 24°C
+- IAC: 93 steps
+- Conditions: Working start
+
+start7.csv - Failed start:
+- CLT: Unknown
+- Conditions: With 6.8Ω ballast resistor, 6.0ms opening time
+
+================================================================================
+IMPORTANT CONFIGURATION NOTES
+================================================================================
+
+Hardware:
+- Injector: Magneti Marelli IWM500.01 (2.0Ω actual, low-impedance)
+- IAC: Stepper motor, 0 steps = FULLY OPEN, 165 steps = FULLY CLOSED
+- Distributor: Mechanical with vacuum + centrifugal advance
+- Ignition: NOT controlled by Speeduino (fuel-only ECU)
+
+Datalog Artifacts:
+- PW = 0.000ms in logs: Normal in 2-squirts mode (alternating fire pattern)
+- Advance values: Fictional table lookups, not real timing measurements
+
+================================================================================
+END OF REFERENCE
+================================================================================

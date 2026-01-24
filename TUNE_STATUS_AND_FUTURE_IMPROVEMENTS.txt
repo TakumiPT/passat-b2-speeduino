@@ -1,0 +1,249 @@
+================================================================================
+VW PASSAT 1.6 DT - SPEEDUINO TUNE STATUS & FUTURE IMPROVEMENTS
+================================================================================
+Date: December 9, 2025
+Engine: VW 1.6 DT (1599cc, 9.0:1 CR, 75 PS @ 5200 RPM)
+Fuel System: Gol G2 SPI Monopoint (~60 lb/hr, 2 ohm injector)
+ECU: Speeduino v0.4, firmware 2025.01.6
+Ignition: Stock distributor with vacuum advance (NOT Speeduino controlled)
+
+================================================================================
+CURRENT TUNE STATUS - WHAT'S DONE
+================================================================================
+
+✅ COMPLETED & WORKING:
+
+1. VE TABLE - FIXED
+   - 125% at 100 kPa / 500 RPM (was 68%)
+   - Proper rich mixture at WOT/low RPM
+   - Fixes intake backfires and stalling
+
+2. AFR TARGETS - CORRECT
+   - WOT: 12.5-12.6:1 (rich for power)
+   - Cruise: 14.7:1 (stoich for economy)
+   - Idle: ~14.7:1
+
+3. ACCELERATION ENRICHMENT (AE) - OPTIMIZED
+   - Mode: TPS-based
+   - Threshold: 30 %/s
+   - Time: 300 ms (was 450 ms)
+   - Values: 40, 70, 100, 130% at 70/220/430/790 %/s
+   - Taper: 5000-6200 RPM (full AE below 5000)
+
+4. WARMUP ENRICHMENT (WUE) - OK
+   - -40C: 180%
+   -  0C: 168%
+   - 20C: 134%
+   - 80C: 102%
+   - 90C: 100%
+
+5. CRANKING ENRICHMENT - OK
+   - -40C: 280%
+   - 0C: 230%
+   - 30C: 210%
+   - 70C: 200%
+   - Crank RPM: 300
+
+6. AFTER START ENRICHMENT (ASE) - OK
+   - -20C: 100% for 25 cycles
+   - 0C: 90% for 20 cycles
+   - 40C: 60% for 15 cycles
+   - 80C: 30% for 6 cycles
+
+7. PRIMING PULSE - OK
+   - -20C: 8.0 ms
+   - 0C: 6.0 ms
+   - 40C: 3.0 ms
+   - 82C: 2.0 ms
+
+8. IAT AIR DENSITY CORRECTION - OK
+   - -40C: 115% (+15% fuel)
+   - 0C: 105% (+5% fuel)
+   - 20C: 102% (baseline)
+   - 40C: 99% (-1% fuel)
+   - 80C: 95% (-5% fuel)
+
+9. REV LIMITER - OK
+   - Soft: 6000 RPM
+   - Method: Fuel cut
+
+10. FUEL PUMP - OK
+    - Prime time: 3 seconds
+
+================================================================================
+FUTURE IMPROVEMENTS - FUEL
+================================================================================
+
+⚠️ 1. DFCO (DECEL FUEL CUT) - CURRENTLY OFF
+   Status: Disabled
+   Benefit: Better fuel economy, engine braking
+   
+   RECOMMENDED SETTINGS:
+   - Enable: On
+   - DFCO RPM: 1500 (cut above this)
+   - DFCO TPS: 2% (cut when throttle closed)
+   - DFCO Hysteresis: 200 RPM
+   - DFCO MAP: 30 kPa
+
+   HOW IT WORKS:
+   - When coasting (throttle closed, RPM > 1500)
+   - Speeduino cuts fuel completely
+   - Saves fuel, provides engine braking
+   - Resumes fuel below 1500 RPM or when throttle opens
+
+--------------------------------------------------------------------------------
+
+⚠️ 2. EGO CLOSED LOOP - CURRENTLY OFF
+   Status: Wideband connected but "No correction"
+   Benefit: Auto-tune AFR at cruise, better economy
+   
+   RECOMMENDED SETTINGS (when ready):
+   - Algorithm: Simple
+   - Min CLT: 70C (only when warm)
+   - Min RPM: 1200
+   - Max TPS: 60% (disable at WOT)
+   - Authority: ±15%
+   
+   CAUTION: Only enable after VE table is reasonably close.
+   Let it fine-tune, not fix major errors.
+
+--------------------------------------------------------------------------------
+
+⚠️ 3. AFR PROTECTION - CURRENTLY OFF
+   Status: Disabled
+   Benefit: Protects engine from lean condition damage
+   
+   RECOMMENDED SETTINGS:
+   - Enable: On
+   - Min MAP: 80 kPa (only at high load)
+   - Min RPM: 2000
+   - Max AFR: 16.0 (cut spark/fuel if leaner)
+   - Cut Time: 1.0 sec
+   
+   HOW IT WORKS:
+   - If AFR > 16.0 at high load, Speeduino cuts spark/fuel
+   - Prevents melted pistons from lean detonation
+
+--------------------------------------------------------------------------------
+
+⚠️ 4. BARO CORRECTION - CURRENTLY OFF
+   Status: Disabled
+   Benefit: Adjusts for altitude changes
+   
+   RECOMMENDED:
+   - Enable: On (if MAP sensor supports it)
+   - Adds/removes fuel based on atmospheric pressure
+   - Useful if driving in mountains
+
+--------------------------------------------------------------------------------
+
+⚠️ 5. COLD AE MULTIPLIER - NOT FOUND
+   Status: May not be configured
+   Benefit: More AE when engine is cold (sluggish response)
+   
+   RECOMMENDED:
+   - 150% AE multiplier at -20C
+   - 130% at 0C
+   - 100% at 40C+
+
+================================================================================
+FUTURE IMPROVEMENTS - IGNITION (When Speeduino controls spark)
+================================================================================
+
+❌ 6. CLT COLD ADVANCE - NOT SET
+   Status: All zeros (0 deg at all temps)
+   Benefit: Easier cold starts, smoother cold idle
+   
+   RECOMMENDED SETTINGS:
+   CLT (C)   Advance
+   -------   -------
+   -20       +6 deg
+    0        +4 deg
+   20        +2 deg
+   40        0 deg
+   60+       0 deg
+
+--------------------------------------------------------------------------------
+
+❌ 7. IDLE ADVANCE - OFF
+   Status: Disabled
+   Benefit: Smoother idle, better economy
+   
+   RECOMMENDED SETTINGS:
+   - Enable: On
+   - Idle Advance: +5 to +10 deg
+   - RPM Threshold: 1200
+   - TPS Threshold: 2%
+   - Delay: 2 seconds
+
+--------------------------------------------------------------------------------
+
+✅ 8. IAT IGNITION RETARD - PARTIALLY SET
+   Status: Configured for hot air
+   
+   CURRENT:
+   IAT (C)   Retard
+   -------   ------
+   0-40      0 deg
+   60        -2 deg
+   80        -5 deg
+   100       -6 deg
+   
+   This is good - retards timing when air is hot to prevent knock.
+
+================================================================================
+HARDWARE NOTES
+================================================================================
+
+⚠️ INJECTOR RESISTOR:
+   - Current: No resistor (2 ohm injector direct to Speeduino)
+   - Risk: High current (7A) may damage MOSFET over time
+   - RECOMMENDED: Add 3.3 ohm 25W resistor in series
+   - Result: ~2.6A, safer for Speeduino output
+
+⚠️ IAC STEPPER:
+   - Issue: "Stepper Power = Always" burned out 2 steppers
+   - FIX: Set "Stepper Power = Active"
+   - Coils should only energize during stepping, not constantly
+
+================================================================================
+PRIORITY ORDER FOR IMPROVEMENTS
+================================================================================
+
+HIGH PRIORITY (Do Soon):
+1. Enable DFCO - Free fuel savings
+2. Enable AFR Protection - Engine safety
+3. Fix IAC Stepper Power setting - Prevent burning steppers
+
+MEDIUM PRIORITY (When Ready):
+4. Enable EGO Closed Loop - Better cruise economy
+5. Add Speeduino ignition control - Full ECU control
+6. Set up CLT Cold Advance - Better cold starts
+
+LOW PRIORITY (Nice to Have):
+7. Enable Baro Correction - For mountain driving
+8. Cold AE Multiplier - Slightly better cold response
+9. Idle Advance - Smoother idle
+
+================================================================================
+SUMMARY - WHAT THE CURRENT TUNE FIXES
+================================================================================
+
+BEFORE (Old Tune):
+- VE 68% at WOT/low RPM = LEAN (AFR 17-19:1)
+- Intake backfires on throttle snap
+- Stalling when hitting WOT from idle
+- Poor throttle response
+
+AFTER (Current Tune):
+- VE 125% at WOT/low RPM = CORRECT (AFR 12.6:1)
+- No backfires (proper fuel)
+- No stalling (enough power to accelerate)
+- Clean throttle response
+
+Engine should feel "like new" - as it ran from factory in 1988!
+Actually BETTER than factory Pierburg 2E2 carburetor! :-)
+
+================================================================================
+END OF DOCUMENT
+================================================================================

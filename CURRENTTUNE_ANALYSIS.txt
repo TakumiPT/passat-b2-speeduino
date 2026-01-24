@@ -1,0 +1,299 @@
+================================================================================
+CURRENTTUNE.MSQ CONFIGURATION ANALYSIS
+================================================================================
+Date: November 22, 2025
+File: CurrentTune.msq (Speeduino 2025.01.6)
+
+================================================================================
+CRITICAL SETTINGS REVIEW
+================================================================================
+
+FUEL CONFIGURATION:
+===================
+✓ Req_Fuel: 4.2ms
+✓ Injector Opening Time: 1.0ms (GOOD - no resistor compensation)
+✓ Number of Injectors: 1 (TBI/SPI system confirmed)
+✓ Squirts Per Cycle: 4
+
+IGNITION SETTINGS:
+==================
+✓ Spark Mode: Wasted Spark (correct for 4-cylinder)
+✓ Dwell Run: 3.0ms (normal)
+✓ Dwell Crank: 4.5ms (good for starting)
+✓ Trigger: 12-1 wheel (VW standard)
+✓ Trigger Angle: 0 degrees
+✓ Crank Angle: 5 degrees
+✓ Crank RPM threshold: 300 RPM
+
+IGNITION ADVANCE TABLE (Page 13):
+==================================
+Low RPM (idle/cranking) advance: 17-18 degrees
+Mid-range advance: 20-32 degrees
+High RPM advance: 18-34 degrees
+
+CRANKING ADVANCE: 17 degrees at low MAP
+  - This is REASONABLE for cranking
+  - Not too advanced (would cause kickback)
+  - Not too retarded (would be hard to start)
+
+IAC CONFIGURATION:
+==================
+✓ IAC Algorithm: Stepper Open Loop
+✓ IAC Home Position: 165 steps (CORRECT - fully closed for inverted stepper)
+✓ IAC Step Time: 3ms
+✓ IAC Cranking Steps at different temps:
+    -21°C: 0 steps (MAXIMUM airflow - inverted stepper)
+      0°C: 60 steps
+     37°C: 120 steps
+     79°C: 165 steps (fully closed when hot)
+
+⚠️ PROBLEM: IAC cranking at 0°C = 60 steps (very open)
+  - At 21°C (interpolated): ~90 steps
+  - This allows TOO MUCH air during cranking
+  - Should be closer to 120-140 steps at 21°C
+
+WARMUP ENRICHMENT (WUE):
+========================
+Temperature bins: -40°C, -26°C, 10°C, 19°C, 28°C, 37°C, 46°C, 58°C, 63°C, 64°C
+
+WUE values need to be calculated from wueAFR table:
+  Base AFR target: 14.7
+  WUE AFR adjustments: -2.0 to 0.0
+  
+At cold temps (-40°C): AFR = 14.7 - 2.0 = 12.7 (rich)
+At warm temps (64°C+): AFR = 14.7 - 0.0 = 14.7 (stoich)
+
+Recommended WUE percentages shown:
+  -40°C: 180%
+  -26°C: 175%
+   10°C: 168%
+   19°C: 154%
+   28°C: 134%  ⚠️ MAY BE TOO LEAN (should be ~155-165%)
+   37°C: 121%
+   46°C: 112%
+   58°C: 104%
+   63°C: 102%
+   64°C: 100%
+
+ACCELERATION ENRICHMENT (TAE):
+===============================
+TPS rate bins: 70%/s, 220%/s, 430%/s, 790%/s
+Enrichment:    55%,   105%,   165%,   190%
+
+These values are MODERATE - may need increase if experiencing lean stumble
+during acceleration.
+
+================================================================================
+IGNITION TIMING ANALYSIS
+================================================================================
+
+ADVANCE TABLE EXAMINATION:
+==========================
+
+At IDLE conditions (500-1000 RPM, 30-50 kPa):
+  Row 8-10, Column 1-4: 17-18 degrees
+  This is NORMAL for idle timing
+
+At CRANKING (200-300 RPM, 90-100 kPa):
+  Bottom rows, left columns: 17-18 degrees
+  This is GOOD - not too advanced
+
+At CRUISE (2000-3000 RPM, 40-60 kPa):
+  Mid rows, mid columns: 24-30 degrees
+  This is REASONABLE for light load cruise
+
+At WOT (high RPM, high MAP):
+  Top rows, right columns: 30-34 degrees
+  This is SAFE - not over-advanced
+
+COLD START TIMING:
+==================
+Fixed cranking advance: NOT ENABLED (ignCranklock: Off)
+Uses advance table values: 17-18 degrees
+This is APPROPRIATE for cold starting
+
+WARM START TIMING:
+==================
+Same as cold (no separate cold/warm timing tables)
+17-18 degrees should work for both cold and warm starts
+
+================================================================================
+POTENTIAL PROBLEMS IDENTIFIED
+================================================================================
+
+PROBLEM 1: IAC CRANKING STEPS TOO LOW (TOO MUCH AIR)
+=====================================================
+Current at 21°C: ~90 steps (interpolated from 0°C=60, 37°C=120)
+Should be: 120-140 steps at 21°C
+
+With inverted stepper:
+  - 0 steps = MAXIMUM airflow (fully open)
+  - 165 steps = MINIMUM airflow (fully closed)
+  - 90 steps = 45% OPEN (too much air!)
+  
+This causes:
+  - High MAP during cranking (99 kPa seen in logs)
+  - Engine needs more fuel to compensate
+  - Harder to start, especially cold
+  - IAC fights to close during warmup
+
+FIX: Increase IAC cranking steps
+  -21°C: 60 → 60 (keep, it's very cold)
+    0°C: 60 → 100
+   37°C: 120 → 140
+   79°C: 165 → 165 (keep, fully closed when hot)
+
+PROBLEM 2: WUE AT 28°C MAY BE TOO LEAN
+=======================================
+Current: 134% at 28°C
+Recommended for TBI: 155-165% at 28-30°C
+
+Your logs show AFR 14.7 at 30°C, should be 12.0-12.5
+This confirms WUE is insufficient
+
+FIX: Increase WUE values
+   28°C: 134% → 160%
+   37°C: 121% → 140%
+
+PROBLEM 3: REQ_FUEL VALUE UNUSUAL
+==================================
+Current: 4.2ms
+Expected for 60 lb/hr injector: ~4.3ms ✓
+Expected for 45 lb/hr injector: ~5.7ms
+
+Your Req_Fuel of 4.2ms suggests:
+  - Injector configured as 60 lb/hr, OR
+  - Custom calibration for specific fuel pressure
+
+With low VE table (~20%), this indicates:
+  - Either fuel pressure higher than rated, OR
+  - Injector flows more than configured, OR
+  - Req_Fuel needs adjustment
+
+This is FUNCTIONAL but may not be optimal.
+
+PROBLEM 4: OPENING TIME WITH RESISTOR
+======================================
+Current: 1.0ms (correct for NO resistor)
+With 6.8Ω resistor: Need 6.0ms MINIMUM
+
+Your test showed:
+  - 6.0ms was INSUFFICIENT (engine didn't start)
+  - Would need 8-12ms to compensate for resistor
+  - This makes resistor approach impractical
+
+================================================================================
+IGNITION TIMING VERDICT
+================================================================================
+
+COLD START TIMING: ✓ GOOD
+  - 17-18 degrees at cranking RPM
+  - Not too advanced (no kickback risk)
+  - Should provide reliable cold starting
+
+WARM START TIMING: ✓ GOOD
+  - Same 17-18 degrees
+  - Appropriate for hot engine
+  - No timing-related hot start issues
+
+IDLE TIMING: ✓ GOOD
+  - 17-18 degrees at idle
+  - Should run smoothly
+  - No excessive advance or retard
+
+CRUISE TIMING: ✓ GOOD
+  - 24-30 degrees light load
+  - Provides good fuel economy
+  - Not over-advanced (detonation safe)
+
+WOT TIMING: ✓ SAFE
+  - 30-34 degrees maximum
+  - Conservative for pump gas
+  - Detonation margin maintained
+
+VERDICT: Ignition timing is NOT the problem!
+  - All timing values are reasonable and safe
+  - No evidence of timing-related starting issues
+  - No excessive advance or retard
+
+================================================================================
+OVERALL CONFIGURATION ASSESSMENT
+================================================================================
+
+GOOD SETTINGS:
+✓ Ignition timing table (17-34 degrees range)
+✓ Cranking timing (17 degrees)
+✓ Dwell settings (3.0ms run, 4.5ms crank)
+✓ Trigger configuration (12-1 wheel)
+✓ Spark mode (wasted spark)
+✓ IAC home position (165 steps)
+✓ Opening Time for no-resistor operation (1.0ms)
+
+PROBLEM SETTINGS:
+✗ IAC cranking steps TOO LOW (90 steps at 21°C, should be 120-140)
+✗ WUE at 28-37°C TOO LEAN (134%/121%, should be 160%/140%)
+✗ Req_Fuel may not match actual injector size (4.2ms vs expected 5.7ms)
+✗ Opening Time insufficient for resistor operation (needs 8-12ms, not 6.0ms)
+
+RECOMMENDATIONS:
+================
+
+1. INCREASE IAC CRANKING STEPS (IMMEDIATE)
+   Settings → Idle → IAC Settings → Cranking Position
+   Change:
+     0°C: 60 → 100 steps
+    37°C: 120 → 140 steps
+   
+   This reduces air during cranking, makes starting easier
+
+2. INCREASE WARMUP ENRICHMENT (IMMEDIATE)
+   Settings → Fuel → Warmup Enrichment
+   Change:
+    28°C: 134% → 160%
+    37°C: 121% → 140%
+   
+   This provides more fuel when cold, achieves AFR 12.0-12.5
+
+3. VERIFY INJECTOR SIZE (DIAGNOSTIC)
+   Physical inspection of injector part number
+   If actually 45 lb/hr, change Req_Fuel: 4.2 → 5.7ms
+   Retest and adjust VE table accordingly
+
+4. ABANDON RESISTOR APPROACH (CONFIRMED)
+   6.0ms Opening Time insufficient
+   Would need 8-12ms (wasteful)
+   Better solutions:
+     - Run without resistor (9A is within spec)
+     - Buy peak-and-hold driver module ($30-60)
+     - Replace with high-impedance injectors ($150-200)
+
+5. CHECK INJECTOR HEALTH (URGENT)
+   Your 2.0Ω measurement may indicate damage
+   Test in TunerStudio: Tools → Test Outputs → Injector 1
+   Listen for loud click
+   Look for fuel spray during ACC prime
+   If weak/absent → Replace injector
+
+================================================================================
+SUMMARY
+================================================================================
+
+Your CurrentTune.msq configuration has:
+  ✓ Good ignition timing (not the problem)
+  ✓ Good basic fuel settings
+  ✗ IAC too open during cranking (fixable)
+  ✗ WUE too lean for cold running (fixable)
+  ⚠️ Possible injector damage from resistor test (needs verification)
+
+The configuration is FUNCTIONAL but needs IAC and WUE adjustments.
+
+IMMEDIATE NEXT STEPS:
+1. Test injector function (click test, fuel spray test)
+2. If injector OK: Adjust IAC cranking steps + WUE
+3. If injector bad: Order replacement (IWM500.01 or high-impedance)
+4. Abandon resistor approach permanently
+5. Retest starting with corrected settings
+
+The tune itself is reasonable - the current no-start condition is likely
+due to injector damage from the resistor experiment, NOT bad ignition
+timing or fundamentally wrong fuel settings.

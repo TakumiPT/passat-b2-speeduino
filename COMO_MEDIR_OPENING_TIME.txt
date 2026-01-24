@@ -1,0 +1,341 @@
+================================================================================
+COMO MEDIR O TEMPO DE ABERTURA DO INJECTOR COM OSCILOSCÓPIO
+Beckman Industrial 9104 - Guia para Iniciantes
+================================================================================
+
+O QUE VAMOS FAZER:
+==================
+Medir quanto tempo o injector demora a abrir com e sem resistência.
+Depois usar essa medição para configurar o TunerStudio corretamente.
+
+
+MATERIAL NECESSÁRIO:
+====================
+✓ Osciloscópio Beckman 9104 (que já tens)
+✓ 2 pontas de prova (probes)
+✓ Carro/motor preparado para arrancar
+✓ Papel e caneta para anotar resultados
+
+
+LIGAR AS PONTAS DE PROVA:
+==========================
+
+CANAL 1 (CH1) - Amarelo:
+------------------------
+Ponta da probe → Fio do injector que vai para o Speeduino (INJ1)
+Garra do ground → Negativo da bateria ou chassis
+
+O QUE MOSTRA: Quando é que o Speeduino MANDA abrir o injector
+
+
+CANAL 2 (CH2) - Azul:
+---------------------
+Ponta da probe → Terminal POSITIVO do injector (lado dos +12V)
+Garra do ground → Negativo da bateria
+
+O QUE MOSTRA: Quando é que o injector REALMENTE abre
+
+
+CONFIGURAR O OSCILOSCÓPIO:
+==========================
+
+1. TIMEBASE (botão do tempo horizontal):
+   Rodar para: 2ms/div ou 5ms/div
+   (cada quadrícula = 2 milissegundos)
+
+2. CANAL 1 (CH1):
+   - Volts/div: 5V/div
+   - Coupling: DC
+   - Posição: Metade superior do ecrã
+
+3. CANAL 2 (CH2):
+   - Volts/div: 5V/div
+   - Coupling: DC
+   - Posição: Metade inferior do ecrã
+
+4. TRIGGER (disparo):
+   - Source: CH1
+   - Slope: ↓ (falling/descida)
+   - Level: ~2.5V (meio da escala)
+   - Mode: Normal
+
+
+FAZER O TESTE:
+==============
+
+OPÇÃO A - Arrancar o motor:
+---------------------------
+1. Ligar as probes como indicado acima
+2. Dar à chave de arranque (cranking)
+3. Congelar a imagem no osciloscópio quando vires o sinal
+4. Medir conforme explicado abaixo
+
+OPÇÃO B - Usar o TunerStudio (MAIS FÁCIL):
+-----------------------------------------
+1. Ligar as probes
+2. Abrir TunerStudio
+3. Ir a: Tools → Test Outputs
+4. Selecionar: Injector 1
+5. Pulse width: 10ms
+6. Clicar "Fire" (dispara uma vez)
+7. Osciloscópio captura o sinal
+8. Medir
+
+
+O QUE VÊS NO ECRÃ:
+==================
+
+Traço de CIMA (CH1 - Comando Speeduino):
+----------------------------------------
+12V  ─────────┐              ┌─────────
+              │              │
+              └──────────────┘
+       Aqui ↑ Speeduino manda abrir
+
+
+Traço de BAIXO (CH2 - Injector):
+--------------------------------
+12V  ─────────┐              ┌─────────
+              │              │
+         6V   └──────────────┘
+       Aqui ↑ Injector abre (tensão desce)
+
+
+COMO MEDIR O OPENING TIME:
+==========================
+
+1. Olha para onde o traço CH1 desce (seta ↓)
+   Esta é a ORDEM para abrir
+
+2. Olha para onde o traço CH2 desce até ~6V
+   Este é o momento em que o injector ABRE
+
+3. Conta as quadrículas entre estes dois pontos
+
+4. Multiplica pelo tempo/divisão:
+   
+   Exemplo:
+   - Timebase = 2ms/div
+   - Distância = 3 quadrículas
+   - Opening Time = 3 × 2ms = 6ms
+
+
+TESTES A FAZER (MÉTODO CIENTÍFICO):
+====================================
+
+REGRA DE OURO: Muda SÓ UMA VARIÁVEL de cada vez!
+
+
+TESTE 1: BASELINE - Medir injector sem nada
+--------------------------------------------
+Hardware: SEM resistência
+TunerStudio: Opening Time = 1.0ms
+
+1. Tirar resistência (se tiver)
+2. Ligar osciloscópio
+3. Test mode: Fire injector com 10ms pulse
+4. MEDIR no osciloscópio: Tempo entre CH1 cair e CH2 cair
+5. ANOTAR: "Baseline = _____ ms"
+
+Exemplo: 0.8ms
+
+Este é o tempo REAL que o injector demora a abrir.
+
+
+TESTE 2: Efeito da resistência (hardware)
+------------------------------------------
+Hardware: COM resistência 6.8Ω
+TunerStudio: Opening Time = 1.0ms (IGUAL AO TESTE 1!)
+
+1. Instalar resistência 6.8Ω
+2. Ligar osciloscópio
+3. Test mode: Fire injector com 10ms pulse (MESMO que teste 1)
+4. MEDIR no osciloscópio: Tempo entre CH1 cair e CH2 cair
+5. ANOTAR: "Com resistência = _____ ms"
+
+Exemplo: 6.5ms
+
+Comparar com Teste 1:
+- Teste 1: 0.8ms
+- Teste 2: 6.5ms
+- CONCLUSÃO: Resistência atrasou 5.7ms (6.5 - 0.8)
+
+
+TESTE 3: Compensar no software
+-------------------------------
+Hardware: COM resistência 6.8Ω (não mexer!)
+TunerStudio: Opening Time = 6.5ms (valor medido no Teste 2)
+
+1. Resistência continua instalada
+2. Configurar TunerStudio Opening Time = 6.5ms
+3. Test mode: Fire injector com 10ms pulse
+4. MEDIR no osciloscópio
+5. Verificar se o timing está correcto agora
+
+Se ainda não arrancar:
+- Teste 4: Opening Time = 8.0ms
+- Teste 5: Opening Time = 10.0ms
+- etc.
+
+
+PORQUÊ ESTE MÉTODO?
+-------------------
+✓ Teste 1 → Mede APENAS o injector
+✓ Teste 2 → Mede APENAS o efeito da resistência
+✓ Teste 3 → Mede APENAS o efeito do Opening Time
+
+Cada teste isola UMA variável!
+Método científico correcto!
+
+
+INTERPRETAR OS RESULTADOS:
+==========================
+
+BOM ✓
+-----
+O injector abre ANTES de metade do tempo total do pulso.
+
+Exemplo:
+- Pulso total: 10ms
+- Abre em: 4ms
+- Sobram: 6ms aberto = BOM ✓
+
+
+MAU ✗
+-----
+O injector abre DEPOIS de metade do tempo.
+
+Exemplo:
+- Pulso total: 6ms
+- Abre em: 4ms
+- Sobram: 2ms aberto = MAU ✗ (quase não abre)
+
+
+CONFIGURAR O TUNERSTUDIO:
+=========================
+
+Depois de medir COM E SEM resistência, faz as contas:
+
+FÓRMULA:
+Opening Time correcto = 1.0ms + (Tempo COM resistência - Tempo SEM resistência)
+
+EXEMPLO:
+--------
+Mediste no osciloscópio:
+- Sem resistência: 0.7ms
+- Com resistência: 6.5ms
+
+Diferença = 6.5ms - 0.7ms = 5.8ms
+
+Opening Time = 1.0ms + 5.8ms = 6.8ms
+Arredonda para cima = 7.0ms ou 8.0ms (margem segurança)
+
+CONFIGURAR:
+No TunerStudio → Settings → Injector Characteristics
+Opening Time = 8.0ms
+
+Se não arrancar, sobe mais 2ms de cada vez (10ms, 12ms, etc)
+
+
+EXEMPLO PRÁTICO:
+================
+
+Vais fazer 2 medições simples:
+
+PASSO 1: Sem resistência
+------------------------
+TunerStudio: Opening Time = 1.0ms
+Osciloscópio mede: 0.7ms de atraso real
+ANOTA: 0.7ms
+
+
+PASSO 2: Com resistência 6.8Ω
+------------------------------
+TunerStudio: Opening Time = 1.0ms (SIM, o mesmo!)
+Osciloscópio mede: 6.5ms de atraso real
+ANOTA: 6.5ms
+
+
+PASSO 3: Calcular
+-----------------
+Diferença = 6.5ms - 0.7ms = 5.8ms
+Opening Time correcto = 1.0ms + 5.8ms = 6.8ms
+Com margem = 8.0ms (arredonda para cima)
+
+
+PASSO 4: Configurar TunerStudio
+--------------------------------
+Opening Time = 8.0ms
+
+
+PASSO 5: Testar arranque
+-------------------------
+Se arrancar = SUCESSO! ✓
+Se não arrancar = Sobe para 10.0ms e testa outra vez
+
+
+DICAS:
+======
+
+✓ Liga bem as garras de ground (o mais curto possível)
+✓ Usa probes 10x se tiveres (reduz ruído)
+✓ Ajusta o trigger level até o traço ficar estável
+✓ Podes congelar a imagem para medir com calma
+✓ Anota TODOS os resultados para comparar
+
+
+TROUBLESHOOTING:
+================
+
+"Não vejo nada no ecrã"
+→ Verifica se o trigger está bem (ajusta o nível)
+→ Muda para modo AUTO temporariamente para ver se há sinal
+→ Verifica ligações das probes
+
+"Traço instável"
+→ Ajusta o trigger level
+→ Verifica ground das probes
+→ Usa modo NORMAL no trigger (não AUTO)
+
+"Sinal muito pequeno"
+→ Baixa o Volts/div (ex: de 5V para 2V)
+
+"Sinal muito grande (fora do ecrã)"
+→ Sobe o Volts/div (ex: de 5V para 10V)
+
+"Não consigo medir o tempo"
+→ Ajusta o Timebase (tempo/div)
+→ Começa em 5ms/div, depois ajusta conforme necessário
+
+
+RESUMO RÁPIDO:
+==============
+
+1. Liga CH1 ao sinal Speeduino
+2. Liga CH2 ao positivo do injector
+3. Configura: 2ms/div, 5V/div em ambos canais
+4. Trigger em CH1, falling edge
+5. Arranca ou usa Test Mode do TunerStudio
+6. Conta quadrículas entre CH1 descer e CH2 descer
+7. Multiplica por ms/div
+8. Esse é o teu Opening Time real!
+9. Configura no TunerStudio
+
+
+QUESTÕES?
+=========
+
+Se tiveres dúvidas sobre o que vês no osciloscópio, anota:
+- Quantas quadrículas de diferença vês
+- Qual é o teu Timebase (ms/div)
+- Tira foto do ecrã se possível
+
+Depois fazemos as contas juntos!
+
+
+BOA SORTE!
+==========
+Com este teste vais descobrir o Opening Time EXACTO para o teu injector.
+É a maneira profissional de fazer - melhor que andar a adivinhar!
+
+================================================================================

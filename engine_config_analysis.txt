@@ -1,0 +1,80 @@
+ENGINE CONFIGURATION ANALYSIS - CORRECTED
+==========================================
+
+ACTUAL VEHICLE & ENGINE:
+------------------------
+Vehicle: VW Passat B2 (1984)
+Engine Code: DT
+Displacement: 1.6L (1595cc)
+Power: 75 PS (55 kW / ~74 HP)
+Engine Family: EA827
+Original Fuel System: Pierburg 2E2 carburetor (dual-throat downdraft)
+Compression Ratio: 9.0:1
+Valve Configuration: OHC (overhead cam), 8-valve
+
+CONVERSION PROJECT:
+-------------------
+REMOVED: Pierburg 2E2 carburetor
+INSTALLED: Gol G2 SPI monopoint throttle body (Brazilian VW part)
+           - Single injector before throttle butterfly
+           - Throttle position sensor
+           - Idle air control valve
+CONTROLLER: Speeduino v4 (fuel + ignition control)
+IGNITION: Bosch Module 124 (ignition amplifier)
+          Original distributor (Hall sensor signal to Speeduino)
+
+TIMING SPECIFICATIONS (Passat B2 1.6L DT):
+------------------------------------------
+Factory timing: 18° BTDC at idle
+Haynes manual note: "Don't disconnect vacuum to adjust"
+  → This was for CARBURETOR setup with mechanical distributor
+  → 18° included vacuum advance contribution
+
+For Speeduino setup:
+- Disconnect vacuum (Speeduino replaces it)
+- Target 18° BTDC total at idle (electronically controlled)
+- Cranking: 12° BTDC
+
+MONOPOINT THROTTLE BODY:
+------------------------
+From: VW Gol G2 (Brazilian market)
+Type: Single-point injection (SPI)
+Injector location: Before throttle butterfly
+Advantages over Pierburg 2E2:
+  - Better fuel atomization
+  - Electronic fuel control (Speeduino)
+  - No carburetor maintenance
+  - Better cold start reliability
+  - Emission improvements
+
+Similar to: Bosch Mono-Jetronic systems used in 1980s-90s VW
+
+IGNITION TIMING STRATEGY:
+--------------------------
+DT engine characteristics:
+- 9.0:1 compression (moderate)
+- Designed for 91 RON fuel (European regular)
+- Conservative timing for reliability
+- Good low-end torque focus
+
+Recommended timing:
+- Cranking: 12° BTDC
+- Idle: 18° BTDC (matches factory spec)
+- Cruise: 24-32° BTDC
+- WOT: 28-35° BTDC (conservative for pump gas)
+
+SPEEDUINO v4 SETUP:
+-------------------
+Board version: Speeduino v4.x
+Firmware: 2025.01.6 (already installed)
+Current mode: Fuel-only (ignition independent)
+Target mode: Fuel + Ignition control
+
+Required changes:
+1. Enable ignition bypass
+2. Configure advance table (18° at idle)
+3. Set cranking timing (12° BTDC)
+4. Calibrate trigger angle with timing light
+5. Disconnect vacuum advance physically
+
+This replicates factory Bosch Mono-Jetronic functionality!

@@ -1,0 +1,39 @@
+# .gitignore for VW Passat Speeduino Project
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+
+# Node.js
+node_modules/
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Large binary files (optional - uncomment to exclude)
+# *.mlg
+# *.png
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Installer files
+*.exe
+*.msi
+mlg-converter/

@@ -1,0 +1,115 @@
+Traceback (most recent call last):
+  File "<string>", line 292, in <module>
+    print('   \u2192 Fix: Increase AE values by 35-40%')
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User1\AppData\Local\Programs\Python\Python314\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 3: character maps to <undefined>
+================================================================================
+DEEP SCIENTIFIC ANALYSIS - LOOKING FOR OTHER PROBLEMS
+================================================================================
+
+Total samples: 393
+Duration: 26.1 seconds
+Engine temp: 96.5C (hot engine)
+
+================================================================================
+PROBLEM 1: IAC (Idle Air Control) STUCK OR BROKEN?
+================================================================================
+
+IAC values in log: [195.0]
+IAC variation: 0.0 steps
+
+WARNING: IAC is STUCK at 195 steps!
+
+This is ABNORMAL. IAC should move during:
+  - Idle (varies to maintain RPM)
+  - Deceleration (closes)
+  - Acceleration (opens)
+
+Possible causes:
+  1. IAC motor disconnected or broken
+  2. IAC control disabled in software
+  3. IAC stuck mechanically
+
+Expected: IAC should vary 40-200 steps during driving
+Actual: ZERO variation - completely stuck!
+
+IMPACT:
+  - Cannot control idle speed properly
+  - May cause high/low idle
+  - Reduces engine flexibility
+
+================================================================================
+PROBLEM 2: VE (Volumetric Efficiency) TABLE TUNING
+================================================================================
+
+Idle VE: avg=21.1%, range=19.0-40.0%
+  WARNING: Very low VE at idle - possible vacuum leak or IAC issue
+Cruise VE: avg=45.1%, range=37.0-61.0%
+WOT VE: avg=78.5%, range=76.0-81.0%
+
+================================================================================
+PROBLEM 3: IGNITION TIMING ANALYSIS
+================================================================================
+
+Idle timing: avg=17.8deg, range=15.0-19.0deg
+  OK: Idle timing in normal range (10-25deg)
+Cruise timing: avg=24.3deg, range=23.0-27.0deg
+WOT timing: avg=28.0deg, range=24.0-30.0deg
+
+================================================================================
+PROBLEM 4: INJECTOR DUTY CYCLE - HEADROOM CHECK
+================================================================================
+
+Duty cycle: avg=9.9%, max=43.3%
+
+OK: Duty cycle has 57% headroom
+
+================================================================================
+PROBLEM 5: FUEL DELIVERY CONSISTENCY
+================================================================================
+
+Idle PW variation: 4.4% CV (coefficient of variation)
+  OK: Stable fuel delivery at idle
+
+================================================================================
+PROBLEM 6: CLOSED LOOP CORRECTION ANALYSIS
+================================================================================
+
+Gego (ego correction): avg=100%, range=100-100%
+Gammae (AE correction): avg=99%, range=99-99%
+
+OK: Gego near 100% - VE table is well calibrated
+
+================================================================================
+PROBLEM 7: AFR TRACKING - TARGET vs ACTUAL
+================================================================================
+
+Idle lambda error: avg=0.087, max=0.224
+This equals AFR error of: 1.28
+
+OK: Lambda tracking target reasonably well
+
+================================================================================
+PROBLEM 8: ENGINE STABILITY ANALYSIS
+================================================================================
+
+Idle RPM: avg=890, std_dev=64.5 RPM
+Idle RPM stability: 7.25% CV
+
+WARNING: Unstable idle (>50 RPM variation)
+  Possible causes:
+    - Vacuum leak
+    - Misfires
+    - IAC not functioning
+    - AFR too lean/rich
+
+================================================================================
+SUMMARY OF FINDINGS
+================================================================================
+
+Issues found (in priority order):
+
+1. ACCELERATION ENRICHMENT: Insufficient (already diagnosed)

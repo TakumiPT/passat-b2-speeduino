@@ -1,0 +1,291 @@
+================================================================================
+TIMING ANALYSIS - WHEN DO EVENTS HAPPEN?
+================================================================================
+
+YOUR QUESTIONS ANSWERED:
+========================
+
+1. WHEN DOES PW DROP FROM 3.175ms TO 1.98ms? (38% decay)
+   --------------------------------------------------------
+   Looking at the running portion (after engine starts):
+   
+   - Engine starts at: t=10.7s
+   - Initial running PW: ~3.2ms
+   - PW at t=38.2s: 1.98ms
+   - Time to decay: 27.5 seconds after start
+   
+   WHY: After-Start Enrichment (ASE) decays too quickly
+        ECU is programmed to reduce fuel progressively
+        Should hold enrichment longer at 30°C
+   
+   TIMELINE:
+   t=10.7s: Start, PW ~3.2ms, AFR ~12.6 (acceptable)
+   t=20.7s: PW ~2.5ms, AFR ~13.5 (getting lean)
+   t=30.7s: PW ~2.1ms, AFR ~13.8 (too lean)
+   t=38.2s: PW ~1.98ms, AFR ~14.0 (very lean)
+
+2. WHEN DOES BATTERY DROP TO 9.7V?
+   ---------------------------------
+   - Minimum battery: 9.7V occurs at t=48.6s
+   - This is DURING cranking for restart attempt!
+   - The log shows: RPM=145, engine barely turning
+   
+   IMPORTANT FINDING:
+   - Initial start at t=10.7s: Battery 10.4V (marginal)
+   - During running: Battery 10.8V average (weak)
+   - During second crank: Battery drops to 9.7V (critical)
+   
+   WHAT THIS MEANS:
+   Your battery is WEAK (should be 12-13V healthy)
+   9.7V during cranking = battery struggling
+   10.4V even at start = battery already low
+   
+   HOWEVER: Battery weakness is NOT causing the lean condition
+            It may make cranking harder, but doesn't affect AFR
+
+3. IS MAP NORMAL FOR THAT RPM?
+   ----------------------------
+   YES! MAP is perfectly normal.
+   
+   At 527 RPM running:
+   - MAP: 60 kPa average (range: 54-72 kPa)
+   - Expected: 45-65 kPa for closed throttle idle
+   - Vacuum created: 41 kPa below atmosphere (101-60=41)
+   
+   WHY MAP IS GOOD:
+   - Engine creating proper vacuum (pulling air through IAC)
+   - No intake leaks (would show MAP >70 kPa)
+   - No restrictions (would show MAP <45 kPa)
+   - Manifold pressure appropriate for RPM
+   
+   For comparison:
+   - 800 RPM normal idle: MAP typically 55-60 kPa
+   - 500 RPM struggling: MAP typically 58-62 kPa
+   - Your 527 RPM at 60 kPa: EXACTLY as expected
+   
+   CONCLUSION: MAP sensor working correctly, no vacuum leaks
+
+4. WHAT ABOUT IAC?
+   ----------------
+   IAC is also NORMAL, but cannot compensate for lean mixture.
+   
+   IAC Statistics:
+   - Average position: 88 steps (while running)
+   - At start: 174 steps (wide open for cold start)
+   - During running: 80-84 steps (stabilized)
+   - Typical range: 80-120 steps for cold idle
+   
+   IAC BEHAVIOR:
+   - Opens to 174 steps at start (correct - needs air)
+   - Settles to 80-88 steps while running (normal)
+   - Trying to add air to increase RPM
+   
+   WHY IAC CANNOT FIX THE PROBLEM:
+   
+   IAC adds AIR, not FUEL.
+   
+   Current AFR: 13.6:1 (too lean)
+   IAC opens more -> More AIR enters
+   More air + same fuel = LEANER AFR (14:1, 15:1...)
+   Leaner AFR = LESS power
+   Less power = RPM cannot increase
+   
+   Think of it this way:
+   - You need gasoline:air ratio of 12:1 (12 parts air, 1 part fuel)
+   - You only have 13.6:1 (too much air, not enough fuel)
+   - IAC opens: Now you have 15:1 (even worse!)
+   - IAC cannot add fuel, only air
+   - Solution: Add MORE FUEL first, then IAC can control RPM
+
+================================================================================
+COMPLETE EVENT TIMELINE
+================================================================================
+
+t=0s to 10.7s: PRE-START / CRANKING
+----------------------------------
+Battery: Starts at ~11-12V, drops during crank
+RPM: 0 (cranking but not yet running)
+PW: Cranking pulsewidth (enriched)
+MAP: Atmospheric (97 kPa)
+IAC: Opening to cold start position
+
+t=10.7s: ENGINE FIRES AND STARTS
+---------------------------------
+RPM: Jumps to 534 RPM
+PW: 3.2ms (with After-Start Enrichment)
+Battery: 10.4V (low, but functional)
+MAP: Drops to 54 kPa (engine creating vacuum)
+IAC: Wide open at 174 steps
+AFR: ~12.6:1 (acceptable initially)
+
+t=10.7s to 20.7s: EARLY RUNNING (First 10 seconds)
+---------------------------------------------------
+RPM: Climbs slightly to 550-575 RPM
+PW: Decays from 3.2ms to 2.5ms (ASE reducing)
+Battery: Recovers to 10.8V
+MAP: Settles to 57-58 kPa
+IAC: Closes to 84 steps (less air needed)
+AFR: Leans out to 13.5:1 (getting marginal)
+
+t=20.7s to 30.7s: MID RUNNING (10-20 seconds)
+----------------------------------------------
+RPM: Peaks at ~580 RPM, then starts falling
+PW: Continues decay to 2.1ms
+Battery: Stable at 10.8V
+MAP: Stable at 59 kPa
+IAC: Stable at 80 steps (ECU trying to hold RPM)
+AFR: Continues to lean, 13.8:1 (too lean for power)
+
+t=30.7s to 40.7s: LATE RUNNING (20-30 seconds)
+-----------------------------------------------
+RPM: Dropping to 501-520 RPM (losing power)
+PW: Down to 2.0ms (ASE almost gone)
+Battery: Stable at 10.8V
+MAP: Stable at 60 kPa
+IAC: Still at 80 steps (cannot help)
+AFR: Very lean, 14.0:1 (insufficient fuel)
+
+t=40.7s onwards: STRUGGLING / STALL ATTEMPT
+--------------------------------------------
+RPM: Falls below 500 RPM, engine dying
+PW: Minimum running value 1.98ms
+Battery: Still weak
+MAP: Rises toward atmospheric (engine losing power)
+IAC: Opens to 180 steps (desperation mode)
+AFR: Extremely lean, engine cannot sustain
+
+t=48.6s: RESTART ATTEMPT (visible in log)
+------------------------------------------
+RPM: 145 (barely cranking)
+Battery: Drops to 9.7V (critical low)
+MAP: 72 kPa (engine not pulling vacuum)
+This is where you try to restart after stall
+
+================================================================================
+ROOT CAUSE HIERARCHY
+================================================================================
+
+PRIMARY PROBLEM: INSUFFICIENT FUEL ENRICHMENT
+   ↓
+   Fuel decays from 3.2ms to 1.98ms in 27 seconds
+   ↓
+   AFR becomes too lean (13.6:1 instead of 12:1)
+   ↓
+   Lean mixture = Less power produced
+   ↓
+   RPM stuck at 527, cannot overcome friction
+   ↓
+   Engine eventually stalls
+
+SECONDARY ISSUE: WEAK BATTERY
+   Battery at 10.4V during start (should be 12-13V)
+   Battery at 9.7V during restart (critically low)
+   ↓
+   Makes cranking harder
+   May affect ignition spark energy
+   BUT: Not causing the lean AFR problem
+
+NOT PROBLEMS:
+   ✓ MAP: 60 kPa is correct for 527 RPM
+   ✓ IAC: 88 steps is normal range
+   ✓ No vacuum leaks
+   ✓ No intake restrictions
+   ✓ Engine mechanically sound (creates proper vacuum)
+
+================================================================================
+TECHNICAL EXPLANATION: WHY MAP AND IAC ARE NORMAL
+================================================================================
+
+MAP (Manifold Absolute Pressure):
+---------------------------------
+MAP measures pressure in intake manifold.
+
+Atmospheric pressure: 101 kPa (sea level)
+Your MAP while running: 60 kPa
+Vacuum created: 101 - 60 = 41 kPa
+
+What creates vacuum?
+- Pistons moving down suck air through throttle/IAC
+- At idle, throttle closed, only IAC allows air
+- Engine acts like air pump, creating negative pressure
+
+Why 60 kPa is normal at 527 RPM:
+- At low RPM, pistons move slowly
+- Less air sucked per minute
+- IAC at 88 steps provides some airflow
+- Balance: Air pulled in = Air entering through IAC
+- Result: Moderate vacuum (60 kPa)
+
+If MAP was WRONG:
+- MAP >70 kPa = Vacuum leak (too much air entering)
+- MAP <50 kPa = Restricted intake (not enough air)
+- Your 60 kPa = Goldilocks zone (just right)
+
+IAC (Idle Air Control):
+-----------------------
+IAC is a stepper motor that opens/closes air bypass around throttle.
+
+Your IAC behavior:
+- Cold start: Opens to 174 steps (needs lots of air for combustion)
+- Stabilizes: Closes to 80-88 steps (less air needed as warmup)
+- When struggling: Opens to try increasing RPM
+
+Why IAC cannot fix lean condition:
+
+Scenario without enough fuel:
+    Current state: 13.6 parts air : 1 part fuel (too lean)
+    IAC opens more: 15 parts air : 1 part fuel (even leaner!)
+    Result: WORSE, not better
+    
+Scenario with proper fuel:
+    Fixed state: 12 parts air : 1 part fuel (correct)
+    RPM too low: IAC opens, adds more air
+    ECU adds more fuel to match: Still 12:1 ratio maintained
+    More air + more fuel = More power = RPM increases
+    Result: IAC can now control RPM effectively
+
+The key: IAC works WITH fuel enrichment, not instead of it.
+
+================================================================================
+FINAL ANSWER TO YOUR QUESTIONS
+================================================================================
+
+Q: When does PW drop 38% (3.175ms → 1.98ms)?
+A: Over 27.5 seconds after start (t=10.7s to t=38.2s)
+   This is the After-Start Enrichment decaying too fast
+
+Q: When does battery drop to 9.7V?
+A: At t=48.6s during restart attempt after engine nearly stalled
+   Battery is weak throughout (10.4V at start, should be 12-13V)
+
+Q: Is MAP normal for that RPM?
+A: YES - 60 kPa at 527 RPM is perfect
+   Shows proper vacuum, no leaks, no restrictions
+
+Q: Is IAC normal?
+A: YES - 88 steps is normal range for cold idle
+   BUT: Cannot compensate for lean mixture (adds air, not fuel)
+   IAC will work properly once fuel enrichment is fixed
+
+================================================================================
+ACTION PLAN
+================================================================================
+
+IMMEDIATE FIX:
+1. Increase warmup enrichment at 30°C from 1.08x to 2.3x (+125%)
+2. Extend After-Start Enrichment duration from ~10s to 30-40s
+3. Slow ASE decay rate so fuel stays at 2.8-3.0ms longer
+
+SECONDARY FIX:
+4. Charge or replace battery (10.4V is too low for reliable starting)
+5. Test with battery at 12.5V+ for best results
+
+VERIFICATION:
+- AFR should stabilize at 12.0-12.5:1 (not 13.6:1)
+- RPM should climb to 850-950 (not 527)
+- PW should hold at 2.8-3.0ms for 30+ seconds (not decay to 1.98ms)
+- Battery voltage will be more stable with less cranking stress
+
+MAP and IAC will work correctly once fuel is fixed!
+
+================================================================================

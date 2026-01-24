@@ -1,0 +1,435 @@
+SPEEDUINO IGNITION CONTROL SETUP GUIDE
+VW PASSAT B2 1984 - 1.6L ENGINE CODE DT (75 PS / 55 kW)
+Factory: Pierburg 2E2 Carburetor + Bosch Module 124 + Distributor (Hall sensor)
+Conversion: Pierburg 2E2 removed → Gol G2 SPI Monopoint + Speeduino v4
+================================================================================
+
+VEHICLE: VW Passat B2 (1984)
+ENGINE: 1.6L DT (75 PS / 55 kW)
+FACTORY IGNITION: Bosch Module 124 + Distributor with Hall sensor (KEPT)
+CONVERSION: Pierburg 2E2 carburetor REMOVED → Gol G2 SPI monopoint throttle body + Speeduino v4
+
+ENGINE SPECIFICATIONS (from Haynes Manual):
+-------------------------------------------
+Capacity: 1595 cc (97.29 cu in)
+Bore: 81.0 mm (3.16 in)
+Stroke: 77.4 mm (3.02 in)
+Compression ratio: 9.0:1
+Firing order: 1-3-4-2 (cylinder #1 at timing belt end)
+Compression pressure: 9-12 bar (131-174 psi) normal
+                     7 bar (102 psi) minimum allowable
+                     3 bar (44 psi) maximum difference between cylinders
+
+Valve timing at 1mm lift:
+  Inlet opens: 5° BTDC
+  Inlet closes: 21° ABDC
+  Exhaust opens: 41° BBDC
+  Exhaust closes: 3° ATDC
+  Valve overlap: 8° (mild cam, good low-end torque)
+
+Ignition system:
+  Type: 12V transistorized coil ignition (TCI)
+  Rotor rotation: Clockwise
+  Timing: 18° ± 1° BTDC at 700-800 RPM
+  Timing check method: Vacuum hose connected (factory)
+  Coil primary resistance: 0.52-0.76 Ω
+  Coil secondary resistance: 2400-3500 Ω
+  Spark plugs: NGK BP6-E (or equivalent)
+  Spark gap: 0.6-0.8 mm
+  Catalytic converter: NO (can handle higher EGT safely)
+
+Factory timing spec: 18° BTDC ± 1° at 700-800 RPM (measured with vacuum connected)
+
+HARDWARE REQUIREMENTS:
+----------------------
+✓ Speeduino v4 board
+✓ Factory Bosch Module 124 (ignition amplifier - already installed)
+✓ Factory distributor with Hall sensor (already installed)
+✓ Speeduino IGN1 output wire to Bosch Module 124 input (NEEDS WIRING)
+✓ Distributor Hall sensor connected to Speeduino RPM input (already done)
+✓ Vacuum advance to be DISCONNECTED (unplug vacuum hose)
+✓ Timing light (essential for trigger angle calibration!)
+
+WIRING NOTE:
+Currently: Distributor Hall → Bosch Module 124 → Coil (independent ignition)
+           Distributor Hall → Speeduino (RPM reading only)
+
+Target:    Distributor Hall → Speeduino RPM input
+           Speeduino IGN1 output → Bosch Module 124 input → Coil
+           (Speeduino controls timing, Bosch Module 124 amplifies signal)
+
+STEP-BY-STEP TUNERSTUDIO CONFIGURATION:
+========================================
+
+STEP 1: BASIC SPARK SETTINGS
+-----------------------------
+Menu: Settings → Engine Constants
+
+Section: "Trigger Setup"
+→ Trigger Pattern: "Basic Distributor" (already set ✓)
+→ Trigger Angle: 0 (we'll calibrate this later!)
+→ Trigger Edge: "FALLING" (already set ✓ - VW Hall sensor triggers on falling edge)
+
+NOTE: Primary Base Teeth and Missing Teeth are not configurable with "Basic Distributor" pattern.
+
+Section: "Spark/Dwell Settings"
+→ Spark Mode: "Wasted Spark" (already set ✓)
+→ Number of coils: 1
+→ Spark Output: IGN1
+→ Spark Duration: 1.0 ms
+
+
+STEP 2: ENABLE IGNITION CONTROL
+--------------------------------
+Menu: Settings → Engine Constants
+
+Section: "Spark/Dwell Settings"
+→ Scroll down to "Ignition Bypass"
+→ Ignition bypass enabled: CHANGE "Off" to "On" ✓✓✓
+
+This enables Speeduino to control ignition timing!
+
+
+STEP 3: DWELL SETTINGS (COIL CHARGING TIME)
+--------------------------------------------
+Menu: Settings → Spark Settings → Dwell
+
+For VW can-type coil with Bosch Module 124:
+
+Simple Mode:
+→ Use dwell map: "No"
+→ Cranking dwell: 4.5 ms (already set ✓)
+→ Running dwell: 3.0 ms (already set ✓)
+→ Dwell limit: 8.0 ms (already set ✓)
+
+These values are GOOD - don't change!
+
+
+STEP 4: IGNITION ADVANCE TABLE (advTable1)
+-------------------------------------------
+Menu: Tuning → Spark Table
+
+This is your main ignition timing map.
+Use the optimized table from file: ignition_table_95_RON.txt
+
+COPY/PASTE PROCEDURE:
+1. Open ignition_table_95_RON.txt
+2. Select all (Ctrl+A), Copy (Ctrl+C)
+3. In TunerStudio Spark Table, click top-left cell (100 kPa, 500 RPM)
+4. Paste (Ctrl+V)
+5. Click "Burn" to save to Speeduino
+
+Table optimized for:
+- 95 RON European premium fuel (recommended)
+- 9.0:1 compression ratio
+- No catalytic converter (DT engine)
+- Mild valve timing (8° overlap)
+- Conservative WOT timing (32-34° BTDC) = safe with 2-4° knock margin
+- Economy cruise timing (38-40° BTDC) = maximum fuel efficiency
+- High RPM protection (retarded at 8000-9000 RPM)
+
+KEY CHARACTERISTICS:
+- Idle (500-1000 RPM): 18° BTDC = MATCHES HAYNES FACTORY SPEC ± 1° ✓
+- Light load cruise (30-50 kPa): 38-40° BTDC = excellent fuel economy
+- WOT (100 kPa): 32-34° BTDC = safe power (conservative)
+- High RPM (7000+ RPM): Retarded by 1-3° = engine protection
+
+SCIENTIFIC BASIS:
+- 9.0:1 compression + 95 RON fuel = safe up to 36° WOT
+- Table uses 32-34° WOT = 2-4° safety margin below knock threshold
+- No catalytic converter = can handle higher EGT temperatures
+- Small valve overlap (8°) = stable combustion, less knock risk
+- If you hear knock: Reduce WOT row (100 kPa) by 2° across all RPM values
+
+FUEL COMPATIBILITY:
+- 91 RON: Use IGNITION_TABLES_DT_ENGINE.txt 91 RON table instead
+- 95 RON: Use ignition_table_95_RON.txt (THIS TABLE) ✓ RECOMMENDED
+- 98 RON: Can add +2° to all WOT values for more power
+
+
+STEP 5: CRANKING TIMING
+------------------------
+Menu: Settings → Spark Settings → Cranking Options
+
+→ Fixed cranking timing: 12° BTDC
+
+This is the timing used during cranking (RPM < 400).
+
+Why 12° for DT engine:
+- Factory idle spec: 18° BTDC at 700-800 RPM
+- Cranking RPM lower (~200-300 RPM) = less flame propagation time needed
+- 12° BTDC = safe starting point (prevents backfires)
+- 9.0:1 compression + small valve overlap = can handle good advance
+
+If engine has trouble firing:
+- Increase to 15° BTDC (more advance)
+- Or decrease to 8° BTDC if backfires occur
+
+After engine fires and exceeds 400 RPM, Speeduino uses advance table (18° at idle).
+
+
+STEP 6: IDLE ADVANCE SETTINGS
+------------------------------
+Menu: Tuning → Idle Control
+
+→ Idle advance: 0° (let advance table control timing)
+
+Your advance table already has 18° at idle (matching factory spec).
+Don't add extra here!
+
+
+STEP 7: TRIGGER ANGLE CALIBRATION (CRITICAL!)
+----------------------------------------------
+This is THE MOST IMPORTANT STEP!
+
+WITHOUT THIS, TIMING WILL BE WRONG AND ENGINE WILL BACKFIRE!
+
+Menu: Tools → Calibrate Trigger Angle
+
+OR
+
+Menu: Settings → Spark Settings → Trigger Setup → "Trigger Angle"
+
+IMPORTANT FOR PASSAT B2 DT ENGINE:
+- Haynes says "don't disconnect vacuum" = for FACTORY carburetor setup
+- Factory spec: 18° BTDC at idle WITH vacuum connected
+- For Speeduino: Disconnect vacuum, TARGET 18° BTDC electronically
+
+PROCEDURE:
+
+1. PHYSICALLY disconnect vacuum advance hose from distributor
+   - Unplug the small vacuum hose
+   - Plug both ends with vacuum caps
+   - This lets Speeduino have full timing control
+
+2. In TunerStudio, enable "Fixed Timing Mode":
+   Menu: Tools → Enable Fixed Timing
+   Set to: 18° BTDC (matching factory spec!)
+   Click "Activate"
+
+3. Start engine (will run at fixed 18°)
+
+4. Get timing light:
+   - Clip inductive pickup on cylinder #1 spark plug wire
+   - Point light at crankshaft pulley
+   - Look for timing marks on pulley (usually 0°, 5°, 10°, 15°, 20° marks)
+
+5. Read actual timing:
+   Example: Light shows 78° on pulley markings
+   You commanded: 18°
+   Error: 60° too much!
+
+6. Calculate offset:
+   Trigger Angle = Commanded - Actual
+   = 18° - 78° = -60°
+
+7. In TunerStudio:
+   Settings → Spark Settings → Trigger Setup
+   → Trigger Angle: Enter -60 (or your calculated value)
+
+8. Save to ECU
+
+9. Check again with timing light:
+   Should now show exactly 18° ✓
+
+10. Disable Fixed Timing Mode:
+    Menu: Tools → Disable Fixed Timing
+
+11. Restart engine - should run normally now!
+
+EXPECTED VALUES:
+- VW Passat B2 factory distributor: -60° to -90° typical
+- Every distributor is slightly different
+
+UNDERSTANDING HAYNES MANUAL NOTE:
+Factory setup (Carburetor + Mechanical Distributor):
+  - Base timing: 8-10° BTDC
+  - Vacuum advance: +8-10° at idle
+  - Total: 18° BTDC ✓ (measured with vacuum connected)
+
+Speeduino setup (Electronic Control):
+  - Speeduino commands: 18° BTDC total
+  - No vacuum (Speeduino replaces it)
+  - Total: 18° BTDC ✓ (same result!)
+
+You're replacing mechanical advance with electronic control!
+
+
+STEP 8: VERIFY IGNITION IS WORKING
+-----------------------------------
+Menu: Dashboard
+
+While engine running, check:
+→ "Ign. Timing" or "Advance" value should be showing (not blank)
+→ At idle: Should show 18° BTDC (matching factory spec!)
+→ Rev to 2000 RPM: Should show 24-32°
+→ Values should CHANGE with RPM/throttle
+
+If "Ign. Timing" shows nothing = ignition control not enabled!
+Go back to STEP 2 and enable bypass!
+
+
+STEP 9: FINAL TIMING VERIFICATION
+----------------------------------
+With engine running at idle (800-1000 RPM):
+
+1. Use timing light (with vacuum DISCONNECTED from distributor)
+2. Should show approximately 18° BTDC (matching Haynes factory spec!)
+3. Rev engine to 2000 RPM
+4. Timing should advance to 24-32° BTDC
+5. If timing matches = SUCCESS! ✓
+
+NOTE: Factory Haynes spec of 18° was measured WITH vacuum connected.
+Speeduino achieves same 18° electronically WITHOUT vacuum.
+Result is identical!
+
+
+STEP 10: COLD START TEST
+-------------------------
+After everything configured:
+
+1. Let engine cool to 15-20°C
+2. Battery fully charged (12.6V)
+3. Vacuum advance DISCONNECTED (physically unplugged)
+4. Start engine:
+   - Should fire in 15-30 seconds
+   - NO backfires ✓
+   - Should run smoothly after catching
+   - RPM should stabilize 800-1000
+
+5. Log as teste8.mlg
+6. Check log:
+   - "Ign. Timing" column should show values
+   - During cranking: ~12° BTDC
+   - After start: 18° BTDC at idle (matching factory spec!)
+   - AFR: 12-14 range (rich for warmup)
+
+
+TROUBLESHOOTING:
+================
+
+PROBLEM: Engine backfires during cranking
+SOLUTION: Trigger angle wrong! OR reduce cranking timing to 8° and recalibrate
+
+PROBLEM: Engine won't start at all
+SOLUTION: Check wiring to Bosch module. Try increasing cranking timing to 15°
+
+PROBLEM: Engine runs rough / misfires
+SOLUTION: Trigger angle not calibrated correctly. Redo STEP 7
+
+PROBLEM: "Ign. Timing" not showing in logs
+SOLUTION: Ignition bypass not enabled. Check STEP 2
+
+PROBLEM: Timing light shows wrong timing (not 18° at idle)
+SOLUTION: Recalibrate trigger angle (STEP 7)
+
+PROBLEM: Engine knocks/pings under load
+SOLUTION: Reduce advance in high MAP areas (reduce values by 2-4°)
+
+PROBLEM: "But Haynes says don't disconnect vacuum!"
+SOLUTION: That's for FACTORY carburetor setup with mechanical advance.
+          Speeduino REPLACES vacuum/centrifugal advance electronically.
+          You must disconnect vacuum so Speeduino has full control.
+          Target same total timing (18° at idle) electronically.
+
+
+ADVANCED TUNING (OPTIONAL):
+============================
+
+WARMUP TIMING CORRECTION:
+Menu: Tuning → Warmup → Ignition Warmup
+
+Add extra advance when cold:
+-10°C: +5° advance
+ 20°C: +3° advance  
+ 60°C: +0° advance
+100°C: +0° advance
+
+This helps cold start and warmup.
+
+
+IDLE TIMING CONTROL:
+Menu: Tuning → Idle Control
+
+→ Idle advance mode: "On"
+→ Target idle advance: 16°
+→ Allows fine-tuning idle timing separately
+
+
+KNOCK CONTROL (if you have knock sensor):
+Menu: Settings → Knock Settings
+
+Configure knock sensor input and retard amounts.
+(Not needed for basic setup)
+
+
+SUMMARY - CRITICAL STEPS:
+==========================
+
+Priority 1: Enable ignition bypass (STEP 2)
+Priority 2: Set advance table with 18° at idle (STEP 4)  
+Priority 3: Set cranking timing to 12° (STEP 5)
+Priority 4: CALIBRATE TRIGGER ANGLE WITH TIMING LIGHT (STEP 7)
+            Target: 18° BTDC at idle (matching factory spec)
+Priority 5: Disconnect vacuum advance physically (Speeduino replaces it)
+Priority 6: Test cold start
+
+The trigger angle calibration (STEP 7) is THE MOST IMPORTANT!
+Without it, timing will be wrong by 60-90 degrees!
+
+UNDERSTANDING HAYNES MANUAL vs SPEEDUINO:
+==========================================
+
+Haynes Manual (Factory Carburetor Setup):
+- Says: "18° BTDC, don't disconnect vacuum"
+- Method: Mechanical distributor controls timing
+- Base timing: ~8-10° BTDC
+- Vacuum advance adds: ~8-10° at idle
+- Total: 18° BTDC ✓
+
+Speeduino Setup (Electronic Control):
+- Target: 18° BTDC at idle (same as factory!)
+- Method: Speeduino controls ALL timing electronically
+- Vacuum disconnected (Speeduino replaces it)
+- Speeduino commands: 18° BTDC directly
+- Total: 18° BTDC ✓
+
+SAME RESULT, DIFFERENT METHOD!
+You're replacing mechanical advance with electronic control.
+This is exactly how factory Bosch Monojetronic worked!
+
+
+WHAT TO EXPECT AFTER SETUP:
+============================
+
+✓ Speeduino controls ALL ignition timing
+✓ Advance table determines timing based on RPM/MAP
+✓ Cold starts work reliably (12° BTDC cranking)
+✓ No backfires (timing calibrated correctly)
+✓ Better fuel economy (optimized advance)
+✓ More power (proper advance curve)
+✓ Can tune timing for your specific engine/fuel
+
+Factory Bosch Module 124 and distributor remain:
+- Distributor: RPM signal source (Hall sensor) + spark distribution to cylinders
+- Bosch Module 124: Amplifies Speeduino's ignition signal to fire coil
+- NO mechanical advance (all electronic now - Speeduino controls it!)
+
+
+COMPARING TO CURRENT FUEL-ONLY SETUP:
+======================================
+
+CURRENT (Fuel-Only):
+- Speeduino controls: Fuel only (Gol G2 monopoint throttle body)
+- Timing controlled by: Factory distributor (mechanical vacuum/centrifugal advance)
+- Ignition signal: Distributor Hall → Bosch Module 124 → Coil
+- Problem: Base timing position wrong = backfires
+
+AFTER IGNITION SETUP:
+- Speeduino controls: Fuel + Ignition (complete engine management)
+- Timing controlled by: Speeduino (electronic advance table)
+- Ignition signal: Distributor Hall → Speeduino → Bosch Module 124 → Coil
+- Solution: Perfect timing from Speeduino tables, no backfires
+
+This recreates factory Bosch Mono-Jetronic / Digifant functionality!
+You're using your factory Bosch Module 124 + distributor with modern ECU control.

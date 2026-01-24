@@ -1,0 +1,49 @@
+VW PASSAT B2 1984 ENGINE CODE DT DISTRIBUTOR ANALYSIS
+======================================================
+
+DISTRIBUTOR TYPE:
+-----------------
+VW Passat B2 (1981-1988) with 1.6L DT engine used:
+- Bosch Hall Effect distributor
+- Part numbers: 027 905 205 series (various suffixes)
+- 3-wire Hall sensor (Ground, +12V, Signal)
+
+HALL SENSOR OPERATION:
+----------------------
+VW/Bosch Hall sensors work as follows:
+1. Rotor has windows (open) and shutters (closed)
+2. Hall sensor detects magnetic field through windows
+3. Signal output:
+   - Window passes: Hall sensor ON (typically +5V or +12V)
+   - Shutter blocks: Hall sensor OFF (0V)
+
+TRIGGER EDGE:
+-------------
+For VW Hall distributors, the critical question is:
+- Does timing point occur when signal goes HIGH (rising edge)?
+- Or when signal goes LOW (falling edge)?
+
+STANDARD VW BOSCH HALL SENSOR BEHAVIOR:
+For most VW Bosch distributors (including Passat B2):
+- Trigger occurs when SHUTTER EDGE enters Hall sensor gap
+- This causes signal to go from HIGH to LOW
+- Therefore: FALLING EDGE trigger
+
+VERIFICATION FROM YOUR TUNE:
+-----------------------------
+CurrentTune.msq shows: TrigEdge = "FALLING"
+
+This matches standard VW Bosch Hall sensor behavior!
+
+CONFIRMATION:
+-------------
+✓ FALLING edge is CORRECT for VW Passat B2 distributor
+✓ This is standard for VW Hall effect distributors
+✓ Your current tune already has this set correctly
+
+If you had RISING edge:
+- RPM reading might work (counts pulses regardless)
+- But ignition timing would be 180° off (fires on wrong stroke!)
+- Engine would backfire severely or not run at all
+
+YOUR SETTING IS CORRECT: FALLING

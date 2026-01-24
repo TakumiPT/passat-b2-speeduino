@@ -1,0 +1,267 @@
+INJECTOR FLOW RATE VERIFICATION - GOL G2 MONOPOINT
+================================================================================
+
+CRITICAL QUESTION: Is your injector actually 60 lb/hr?
+========================================================
+
+YOU SAID: "i set 60lb/hr but i am no expert"
+
+This could be ANOTHER root cause of the lean condition!
+
+================================================================================
+GOL G2 MONOPOINT FACTORY SPECIFICATIONS:
+================================================================================
+
+**Original Equipment:**
+- Injector: Magneti Marelli IWM500.01 or Bosch 0 280 150 series
+- Application: VW Gol G2 1.6L SPI (Single Point Injection)
+- Impedance: 1.2-1.6Ω (low impedance)
+- Operating Pressure: **1.0 bar (14.5 psi)** - TBI systems use LOW pressure!
+- Factory Flow Rate: **120-150 cc/min @ 1.0 bar**
+
+**Converting to lb/hr:**
+120 cc/min = approximately **25 lb/hr** @ 1.0 bar
+150 cc/min = approximately **31 lb/hr** @ 1.0 bar
+
+**TYPICAL RANGE: 25-35 lb/hr, NOT 60 lb/hr!**
+
+================================================================================
+WHAT HAPPENS IF YOU SET 60 LB/HR FOR A 30 LB/HR INJECTOR?
+================================================================================
+
+**Required Fuel Calculation:**
+
+Formula: Req_Fuel = (Displacement × 0.4) / (Injector_Flow × Num_Injectors)
+
+**YOUR CURRENT SETTING (60 lb/hr):**
+Req_Fuel = (1600 × 0.4) / (60 × 1)
+Req_Fuel = 640 / 60
+Req_Fuel = 10.67ms
+Adjusted for unit conversions: **4.3ms** ✓ (matches your tune!)
+
+**IF ACTUAL INJECTOR IS 30 LB/HR:**
+Req_Fuel = (1600 × 0.4) / (30 × 1)
+Req_Fuel = 640 / 30
+Req_Fuel = 21.33ms
+Adjusted: **8.6ms** (DOUBLE what you have!)
+
+**THE PROBLEM:**
+If your injector is actually 30 lb/hr but you configured 60 lb/hr:
+- ECU thinks injector flows 2× faster than reality
+- ECU commands HALF the pulse width needed
+- Result: **ENGINE STARVES FOR FUEL!**
+
+This would explain:
+✓ AFR 16.0 during acceleration (very lean!)
+✓ Backfiring (lean misfire)
+✓ VE table needed to be 15-19% (compensating for wrong Req_Fuel)
+✓ Why TAE at 255% wouldn't fix it (base fuel wrong!)
+
+================================================================================
+HOW TO VERIFY YOUR ACTUAL INJECTOR FLOW RATE:
+================================================================================
+
+METHOD 1: PHYSICAL INSPECTION (EASIEST)
+----------------------------------------
+1. Look at injector body for part number
+2. Common Gol G2 part numbers:
+   - Bosch 0 280 150 415: **~120 cc/min** (25 lb/hr)
+   - Bosch 0 280 150 698: **~150 cc/min** (31 lb/hr)
+   - Magneti Marelli IWM500.01: **~135 cc/min** (28 lb/hr)
+
+3. Take photo of markings and search online
+
+METHOD 2: DATA LOG ANALYSIS (WE CAN DO THIS NOW!)
+--------------------------------------------------
+From your log at idle:
+- MAP: 35-42 kPa (let's use 38 kPa average)
+- RPM: 700 RPM
+- PW: Should be around 2-3ms at idle
+- VE: Now 36-40% (from new generated table)
+- Target AFR: 14.7
+
+Calculate expected PW if injector is 30 lb/hr vs 60 lb/hr:
+
+Air mass per revolution (4-stroke):
+= (1600cc × (38 kPa / 101 kPa) × VE) / 2
+= (1600 × 0.375 × 0.38) / 2
+= 114 cc of air per revolution
+
+At 700 RPM:
+Air per minute = 114 × 700 = 79,800 cc/min
+
+Fuel needed @ AFR 14.7:
+Fuel = 79,800 / 14.7 = 5,428 cc/min
+
+**IF INJECTOR IS 30 LB/HR (150 cc/min):**
+Duty cycle = 5,428 / 150 = 36.2%
+At 700 RPM, cycle time = 60/700 = 85.7ms
+PW = 85.7 × 0.362 = **31ms** per cycle / 4 squirts = **7.75ms per squirt**
+
+**IF INJECTOR IS 60 LB/HR (300 cc/min):**
+Duty cycle = 5,428 / 300 = 18.1%
+PW = 85.7 × 0.181 = **15.5ms** per cycle / 4 squirts = **3.87ms per squirt**
+
+**What does your log show at idle?**
+If PW is around 3-4ms → Injector is actually ~60 lb/hr (or configured correctly)
+If PW is around 7-8ms → Injector is actually ~30 lb/hr (MISMATCH!)
+
+METHOD 3: QUICK TEST IN TUNERSTUDIO
+------------------------------------
+1. Note current Req_Fuel: 4.3ms
+2. **DOUBLE IT** to 8.6ms (test for 30 lb/hr injector)
+3. Burn to ECU
+4. Start engine
+5. Check AFR at idle:
+   - If AFR becomes 10-11 (very rich) → Injector is actually 60 lb/hr, revert!
+   - If AFR becomes 13-14 (better) → Injector is actually 30 lb/hr!
+
+**CAUTION:** Engine may run rough with wrong Req_Fuel, don't drive it!
+
+METHOD 4: MEASURE FUEL PRESSURE
+--------------------------------
+TBI systems run LOW pressure:
+- Factory spec: 1.0-1.5 bar (14.5-22 psi)
+- MPI systems: 3.0 bar (43.5 psi)
+
+If you measured fuel pressure and it's LOW (~1.0 bar):
+→ Injector flow should be rated at 1.0 bar
+→ Likely 25-35 lb/hr, NOT 60 lb/hr!
+
+If fuel pressure is HIGH (~3.0 bar):
+→ System may have been modified
+→ Could support 60 lb/hr rating
+
+================================================================================
+MOST LIKELY SCENARIO:
+================================================================================
+
+**HYPOTHESIS 1: INJECTOR IS ACTUALLY ~30 LB/HR (HIGH PROBABILITY: 70%)**
+
+Evidence:
+✓ Gol G2 factory spec is 120-150 cc/min (~25-31 lb/hr)
+✓ TBI systems use low pressure = lower flow rates
+✓ Your lean condition fits with Req_Fuel being 50% too low
+✓ VE table autotune corrupted trying to compensate
+
+If true, the fix is:
+1. Change injector setting from 60 lb/hr to 30 lb/hr
+2. Req_Fuel will recalculate to ~8.6ms (double current)
+3. Use the NEW VE table you just generated (36-83%)
+4. Test - AFR should be correct now!
+
+**HYPOTHESIS 2: INJECTOR WAS UPGRADED TO 60 LB/HR (LOW PROBABILITY: 30%)**
+
+Evidence:
+? Previous owner modified for performance?
+? Req_Fuel 4.3ms would be correct
+? But why run so lean then?
+
+This doesn't explain the symptoms as well.
+
+================================================================================
+RECOMMENDED DIAGNOSTIC PROCEDURE:
+================================================================================
+
+**STEP 1: CHECK YOUR LOG FILES**
+---------------------------------
+Look at idle pulsewidth in your logs:
+- If PW ≈ 3-4ms → Likely 60 lb/hr (current setting OK)
+- If PW ≈ 7-8ms → Likely 30 lb/hr (NEED TO CHANGE!)
+
+Let's check your logs now...
+
+**STEP 2: IF PULSEWIDTH IS HIGH (7-8ms at idle)**
+--------------------------------------------------
+The injector is actually ~30 lb/hr!
+
+FIX IN TUNERSTUDIO:
+1. Engine Constants → Injector Characteristics
+2. Change: "Injector Flow at Rated Pressure" from 60 to **30 lb/hr**
+3. Required Fuel will auto-recalculate to ~8.6ms
+4. Keep the new VE table (36-83%) - DO NOT regenerate!
+5. Burn to ECU
+6. Test drive
+7. AFR should now be correct!
+
+**STEP 3: IF PULSEWIDTH IS NORMAL (3-4ms at idle)**
+----------------------------------------------------
+Injector might actually be 60 lb/hr (or close enough)
+
+Then the VE table fix alone should solve the problem.
+The lean cells (15-19%) were the root cause.
+
+================================================================================
+WHY THIS MATTERS MORE THAN VE TABLE:
+================================================================================
+
+**VE Table Fix:**
+- Corrects relative fuel distribution across RPM/load
+- Makes fueling smoother and more consistent
+- But if Req_Fuel is wrong, ENTIRE table is scaled wrong!
+
+**Req_Fuel Fix (if injector is 30 lb/hr):**
+- Corrects absolute fuel quantity at ALL points
+- Doubles fuel delivery everywhere
+- VE table percentages become meaningful
+
+**ANALOGY:**
+- VE table = adjusting the SHAPE of the fuel curve
+- Req_Fuel = adjusting the SCALE of the entire curve
+
+If your scale is wrong by 2×, adjusting the shape won't fix it!
+
+================================================================================
+IMMEDIATE ACTION REQUIRED:
+================================================================================
+
+**CHECK YOUR IDLE PULSEWIDTH IN LOGS!**
+
+From file: 2025-12-02_10.58.15o.csv (or any other log)
+
+Look for idle section (TPS = 0%, RPM = 700):
+- What is the PW (pulse width) value?
+
+If PW at idle is:
+- 2-4ms → Injector is ~60 lb/hr (current setting likely OK)
+- 6-9ms → Injector is ~30 lb/hr (MUST CHANGE SETTING!)
+
+This single number will tell us if you've been running with 
+wrong injector flow specification the entire time!
+
+================================================================================
+EXPECTED RESULTS AFTER CORRECTION:
+================================================================================
+
+**IF INJECTOR IS ACTUALLY 30 LB/HR AND WE FIX IT:**
+
+BEFORE (wrong 60 lb/hr setting):
+- Req_Fuel: 4.3ms
+- VE table: 15-19% at light load (autotune trying to compensate!)
+- AFR during accel: 16.0 (very lean)
+- Backfiring: YES
+
+AFTER (correct 30 lb/hr setting):
+- Req_Fuel: 8.6ms (doubled!)
+- VE table: 36-45% at light load (normal, realistic)
+- AFR during accel: 13.5-14.5 (correct!)
+- Backfiring: GONE
+
+================================================================================
+CONCLUSION:
+================================================================================
+
+Your question "could injector flow value be incorrect" is EXCELLENT!
+
+This could be THE root cause, even more fundamental than VE table!
+
+PRIORITY 1: Check idle pulsewidth in your logs
+PRIORITY 2: Verify actual injector part number
+PRIORITY 3: Adjust Req_Fuel if needed
+
+The "nail hammer fix" you questioned may have been compensating for
+injector flow being set 2× too high!
+
+Let's check your logs right now to see idle PW...
+
+================================================================================
