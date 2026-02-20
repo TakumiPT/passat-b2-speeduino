@@ -27,7 +27,7 @@
 ### Original Systems Replaced
 | System | Original | New |
 |--------|----------|-----|
-| Fuel Injection | Mechanical (CIS/K-Jetronic?) | Speeduino EFI |
+| Fuel Injection | Carb Pierburg 2e2 | Speeduino EFI |
 | Injector | N/A | Gol G2 SPI Monopoint (~60 lb/hr, 2 ohm) |
 | ECU | None | Speeduino v0.4.3d |
 
