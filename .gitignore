@@ -1,4 +1,4 @@
-# .gitignore for VW Passat Speeduino Project
+# .gitignore for VW Passat Speeduino Project (full TunerStudio project)
 
 # Python
 __pycache__/
@@ -36,4 +36,11 @@ desktop.ini
 # Installer files
 *.exe
 *.msi
-mlg-converter/
+DataLogs/mlg-converter/
+
+# TunerStudio - empty folders
+inc/
+
+# TunerStudio - backup files (keep .msq restore points, exclude duplicates)
+projectCfg/*.bkup
+projectCfg/*.bak
