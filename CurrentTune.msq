@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <msq xmlns="http://www.msefi.com/:msq">
-<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="&lt;html&gt;Restore Point: Project close - &lt;br&gt;Restore Point: User Requested Save of Settings - &#10;" writeDate="Sun Mar 01 00:27:19 GMT 2026"/>
+<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="&lt;html&gt;Restore Point: Project close - &lt;br&gt;Restore Point: User Requested Save of Settings - &#10;" writeDate="Sun Mar 01 19:05:18 GMT 2026"/>
 <versionInfo fileFormat="5.0" firmwareInfo="Speeduino+2025.01.6" nPages="15" signature="speeduino 202501"/>
 <page>
 <pcVariable name="tsCanId">"CAN ID 0"</pcVariable>
@@ -1025,12 +1025,12 @@
          20.3 
       </constant>
 <constant cols="1" digits="0" name="injBatRates" rows="6" units="%">
-         110.0 
-         106.0 
-         102.0 
+         255.0 
+         176.0 
+         127.0 
          100.0 
-         100.0 
-         98.0 
+         86.0 
+         70.0 
       </constant>
 <constant cols="1" digits="0" name="airDenBins" rows="9" units="C">
          -40.0 
