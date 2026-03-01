@@ -16,12 +16,114 @@ This is a **Speeduino ECU tuning project** for a 1984 VW Passat B2 with a 1.6L D
 - **Torque:** 125 N⋅m (92 lb-ft) @ 2500 RPM
 - **Valvetrain:** SOHC 8V, belt-driven, **hydraulic lifters** (Hydrostößel)
 - **Original Fuel System:** Pierburg 2E2 carburetor (removed, converted to EFI)
-- **Current Fuel System:** Gol G2 SPI Monopoint (~60 lb/hr, 2 ohm injector)
+- **Current Fuel System:** Gol G2 SPI Monopoint (~60 lb/hr @ 3 bar rated, 2 ohm low-Z injector)
 - **Fuel Pump:** 3 bar (electric, in-tank or inline)
 - **Fuel Pressure at TBI:** 1.0-1.5 bar (regulated by fuel pressure regulator built into the TBI unit)
-- **ECU:** Speeduino v0.4.3d, firmware 2025.01.6
+- **Injector Driver:** Direct drive — NO ballast resistor, NO peak-and-hold module (as of 2026-02-28 datalogs)
+- **ECU:** Speeduino v0.4.4c SMD (assembled, from diy-efi.co.uk, £155), firmware 2025.01.6
+
+### Injector Sizing — CRITICAL NOTE
+
+This is a **single injector feeding all 4 cylinders** (TBI/Monopoint). Do NOT compare with MPI sizing.
+
+- Rated flow: ~60 lb/hr **@ 3 bar** (injector datasheet pressure)
+- Actual flow @ 1.0 bar: ~35 lb/hr (flow scales with √pressure)
+- Actual flow @ 1.5 bar: ~42 lb/hr
+- Engine demand at WOT: ~37 lb/hr (75 PS × 0.5 lb/hr/HP)
+- **The injector is right-sized or slightly undersized**, NOT oversized
+- At 80% max duty: flow margin is tight at 1.0 bar (~28 lb/hr usable)
+- VE values above 100% are normal and expected for this setup
+- High VE values do NOT indicate misconfiguration
+
+### Injector Current — Analysis Complete (SAFE)
+
+With NO ballast resistor and direct drive from Speeduino's onboard VNLD5090-E:
+- Current: 14V / 2Ω = **7A** when injector is open
+- VNLD5090-E is rated for **13A drain current** → 7A = **54% of rated capacity**
+- **VERDICT: 7A direct drive is SAFE** — well within the VNLD5090-E specifications
+- Device has built-in overcurrent limiting, power limiting, and thermal shutdown with auto-restart
+- Even at 50% injector duty (WOT 6000 RPM), average MOSFET power ≈ 1.5-2.5W — manageable for SOIC-8 on PCB with copper fill
+- **Options (in order of benefit to injector longevity):**
+  1. Peak-and-hold module (see `peak_and_hold/` folder) — best for injector: 7A peak for 1.5ms, then 1.2A hold
+  2. Ballast resistor (3.3Ω 25W) — simple: limits current to ~2.6A, requires `injOpen` increase to 1.5-2.0ms
+  3. Do nothing — **SAFE for the Speeduino board** (VNLD5090 handles it fine), but injector sees more current than necessary
 - **Fuel:** 95 RON gasoline
 - **Production Period:** 08/1983 – 03/1988
+
+### Speeduino Board Hardware (v0.4.4c SMD)
+
+**Board:** Speeduino v0.4.4c SMD assembled version
+**Source:** diy-efi.co.uk (£155 / £186 inc VAT) — currently out of stock
+**Hardware repo:** https://github.com/speeduino/Hardware/tree/main/v0.4/SMD/Latest
+
+#### Injector Outputs — VNLD5090-E (CRITICAL COMPONENT)
+
+The injector channels use **STMicroelectronics VNLD5090-E** smart low-side drivers (OMNIFET III family), NOT bare MOSFETs:
+
+| IC | Ref | Channels | Outputs | MCU Pins |
+|----|-----|----------|---------|----------|
+| U1 | VNLD5090-E | Ch.A, Ch.B | INJ-1-OUT, INJ-2-OUT | D8, D11 |
+| U3 | VNLD5090-E | Ch.A, Ch.B | INJ-3-OUT, INJ-4-OUT | D9, D10 |
+
+**VNLD5090-E Key Specifications:**
+- **Drain current: 13A** (per ST product page)
+- AEC-Q100 qualified (automotive grade)
+- Built-in protections: overcurrent limiting, power limiting, thermal shutdown (auto-restart), ESD, overvoltage clamp
+- Fast demagnetization of inductive loads at turn-off (built-in flyback clamping)
+- Package: SOIC-8
+- Datasheet: https://www.st.com/resource/en/datasheet/vnld5090-e.pdf
+
+**Injector output circuit (per channel):**
+```
+MCU pin → 1kΩ → VNLD5090 input
+                  ↓
+100kΩ pulldown → GND (ensures OFF when MCU not driving)
+
+VNLD5090 output → 1N4448WX diode → INJ-x-OUT terminal
+                → 2.4kΩ + LED ← 12V-SW (status indicator, lights when channel ON)
+                → GND pins to ground
+```
+
+**NO current-limiting resistors on injector outputs.** The 10Ω resistors (R13, R14, R27, R28) are on the IGNITION outputs only.
+
+#### 7A Current Analysis (This Car's Setup)
+
+| Parameter | Without Resistor (now) | With 3.3Ω Resistor | With Peak-and-Hold |
+|-----------|----------------------|--------------------|--------------------|
+| Peak current | 7A | 2.6A | 7A (1.5ms only) |
+| Hold current | 7A (full pulse) | 2.6A (full pulse) | 1.2A (PWM) |
+| VNLD5090 utilization | 54% of 13A rating | 20% of 13A rating | ~1mA (sense only) |
+| VNLD5090 instant power | ~3.4W (est. 70mΩ Rds) | ~0.5W | negligible |
+| Avg power @ idle (2% duty) | 0.07W | 0.01W | negligible |
+| Avg power @ WOT (45% duty) | 1.5W | 0.22W | negligible |
+| VNLD5090 risk | **SAFE** ✅ | Very safe ✅ | Zero load ✅ |
+| Injector heating | High (7A continuous) | Normal (2.6A) | Optimal (1.2A hold) |
+| `injOpen` setting | 1.0ms | 1.5-2.0ms | 1.0ms |
+| Tune changes needed | None | `injOpen` only | None (P&H handles it) |
+
+**Bottom line:** The Speeduino board is NOT at risk. The VNLD5090-E handles 7A with ample margin. The main concern is injector longevity — 7A continuous through a 2Ω coil generates more heat than the injector was designed for (original system used higher voltage/higher resistance or P&H driving). A ballast resistor or P&H module benefits the **injector**, not the Speeduino.
+
+#### Ignition Outputs — IXDN602
+
+| IC | Ref | Channels | Outputs | MCU Pins | Series Resistors |
+|----|-----|----------|---------|----------|-----------------|
+| U2 | IXDN602 | A, B | IGN-1-OUT, IGN-2-OUT | D38, D40 | R13 (10Ω), R14 (10Ω) |
+| U4 | IXDN602 | A, B | IGN-3-OUT, IGN-4-OUT | D50, D52 | R27 (10Ω), R28 (10Ω) |
+
+- IXDN602 = 2A peak MOSFET gate driver (drives external ignition coil MOSFETs/IGBTs)
+- Power rail: Vdrive (selectable via JP1 jumper: 5V or 12V-SW)
+- Decoupling: 0.1µF + 1µF per driver IC
+- **Not used** on this car (ignition still mechanical distributor)
+
+#### Other Components
+| Ref | Part | Function |
+|-----|------|----------|
+| Q1, Q2, Q3 | SSM3K357R (SOT-23) | Small N-ch MOSFETs for auxiliary outputs |
+| U5 | MPX4250AP | Onboard MAP sensor |
+| U6 | SP720ABTG | ESD protection |
+| U8 | LM2940S-5.0 | 5V voltage regulator |
+| D15 | SMBJ40A-Q | TVS diode (transient suppression) |
+| F1, F2 | 0ZCC0050FF2C | Polyfuses (resettable, on logic supply, NOT in injector path) |
 
 ### Hydraulic Lifters — Important Implications
 
@@ -415,6 +517,7 @@ npx mlg-converter --format=csv $(ls -t *.mlg | head -1)
 8. **Don't install a knock sensor on this engine** - Hydraulic lifters produce 4-10 kHz noise that overlaps knock frequency (6-8 kHz). Constant false triggers. Use conservative timing maps instead.
 9. **Don't set hardRevLim above 6200 RPM** - Hydraulic lifters, 40-year-old springs, DT cam makes no power above 5500. If engine rebuilt with new springs: 6500 max.
 10. **Don't remove the thermostatic air cleaner** - TBI injects above throttle plate; warm intake air helps fuel atomization through manifold, especially during cold starts.
+11. **Don't assume the injector driver is a bare MOSFET** - It's a VNLD5090-E smart low-side driver rated for 13A with built-in protections. 7A from the injector is 54% of its rating — SAFE. The concern is injector longevity, not Speeduino board damage.
 
 ## Useful References
 
