@@ -44,3 +44,4 @@ inc/
 # TunerStudio - backup files (keep .msq restore points, exclude duplicates)
 projectCfg/*.bkup
 projectCfg/*.bak
+nul

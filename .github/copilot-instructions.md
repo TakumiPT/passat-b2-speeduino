@@ -16,7 +16,16 @@ This is a **Speeduino ECU tuning project** for a 1984 VW Passat B2 with a 1.6L D
 - **Torque:** 125 N⋅m (92 lb-ft) @ 2500 RPM
 - **Valvetrain:** SOHC 8V, belt-driven, **hydraulic lifters** (Hydrostößel)
 - **Original Fuel System:** Pierburg 2E2 carburetor (removed, converted to EFI)
-- **Current Fuel System:** Gol G2 SPI Monopoint (~60 lb/hr @ 3 bar rated, 2 ohm low-Z injector)
+- **Current Fuel System:** Gol G2 SPI Monopoint throttle body with **Magneti Marelli IWM500.01** injector (GREEN variant, for 1.6-1.8L engines)
+- **Injector Part Numbers:** IWM500.01 / IWM50001 / 501.002.02 / 50100202
+- **Injector Resistance:** 2Ω (measured — low impedance, designed for peak-and-hold drive)
+- **Injector Flow (from Brazilian bench test table @ design pressure):**
+  - Gasoline: 43 ml/test @ 1.0 bar → estimated ~250-260 cc/min @ 1.0 bar (~34 lb/hr)
+  - Alcohol: 54 ml/test @ 1.5 bar → estimated ~310-350 cc/min @ 1.5 bar (~44 lb/hr)
+  - Equivalent @ 3.0 bar: ~450-500 cc/min (~58-65 lb/hr) — matches the ~60 lb/hr config
+  - **Note:** Values are "primeira vazão (bico frio)" — first flow, cold injector
+- **Injector Color Variants:** GREEN (1.6-1.8L), BLACK (2.2-2.4L / CM0006644C), ORANGE (0.8-1.4L / IWM523.00)
+- **Original SPI Applications:** VW Gol/Parati/Saveiro/Logus/Pointer/Quantum/Pampa, Fiat Elba/Prêmio/Palio/Fiorino, Ford Escort, Renault 19 (Brazilian market SPI systems, 1994-1999)
 - **Fuel Pump:** 3 bar (electric, in-tank or inline)
 - **Fuel Pressure at TBI:** 1.0-1.5 bar (regulated by fuel pressure regulator built into the TBI unit)
 - **Injector Driver:** Direct drive — NO ballast resistor, NO peak-and-hold module (as of 2026-02-28 datalogs)
@@ -26,27 +35,61 @@ This is a **Speeduino ECU tuning project** for a 1984 VW Passat B2 with a 1.6L D
 
 This is a **single injector feeding all 4 cylinders** (TBI/Monopoint). Do NOT compare with MPI sizing.
 
-- Rated flow: ~60 lb/hr **@ 3 bar** (injector datasheet pressure)
-- Actual flow @ 1.0 bar: ~35 lb/hr (flow scales with √pressure)
-- Actual flow @ 1.5 bar: ~42 lb/hr
+- **Model:** Magneti Marelli IWM500.01 (confirmed from injector body markings)
+- Rated flow: ~60 lb/hr **@ 3.0 bar** (calculated from Brazilian bench test data, scaling with √pressure)
+- Actual flow @ 1.0 bar: ~34 lb/hr (measured test condition for gasoline)
+- Actual flow @ 1.5 bar: ~44 lb/hr (measured test condition for alcohol)
 - Engine demand at WOT: ~37 lb/hr (75 PS × 0.5 lb/hr/HP)
 - **The injector is right-sized or slightly undersized**, NOT oversized
-- At 80% max duty: flow margin is tight at 1.0 bar (~28 lb/hr usable)
+- At 80% max duty: flow margin is tight at 1.0 bar (~27 lb/hr usable)
 - VE values above 100% are normal and expected for this setup
 - High VE values do NOT indicate misconfiguration
 
-### Injector Current — Analysis Complete (SAFE)
+### Injector Current — WHAT WILL BREAK? (Full Failure Analysis)
 
-With NO ballast resistor and direct drive from Speeduino's onboard VNLD5090-E:
-- Current: 14V / 2Ω = **7A** when injector is open
-- VNLD5090-E is rated for **13A drain current** → 7A = **54% of rated capacity**
-- **VERDICT: 7A direct drive is SAFE** — well within the VNLD5090-E specifications
-- Device has built-in overcurrent limiting, power limiting, and thermal shutdown with auto-restart
-- Even at 50% injector duty (WOT 6000 RPM), average MOSFET power ≈ 1.5-2.5W — manageable for SOIC-8 on PCB with copper fill
-- **Options (in order of benefit to injector longevity):**
-  1. Peak-and-hold module (see `peak_and_hold/` folder) — best for injector: 7A peak for 1.5ms, then 1.2A hold
-  2. Ballast resistor (3.3Ω 25W) — simple: limits current to ~2.6A, requires `injOpen` increase to 1.5-2.0ms
-  3. Do nothing — **SAFE for the Speeduino board** (VNLD5090 handles it fine), but injector sees more current than necessary
+**ANSWER: The INJECTOR will fail. The Speeduino board will NOT fail.**
+
+#### Why the Speeduino is SAFE:
+- VNLD5090-E rated **13A** — your injector draws **7A** (54% of capacity)
+- Built-in thermal shutdown with auto-restart — if it ever gets too hot, it protects itself
+- Built-in overcurrent limiting — cannot be destroyed by overcurrent
+- Estimated Rds(on) ~70mΩ → power = 7² × 0.07 = **3.4W instantaneous**, ~0.17W average at idle (5% duty)
+- SOIC-8 on PCB with copper pour → adequate heat sinking
+- **The VNLD5090-E will NOT break. Period.**
+
+#### Why the INJECTOR is at risk:
+The IWM500.01 was designed for **peak-and-hold drive** by the original Magneti Marelli 1AVB / Bosch Mono-Motronic ECU:
+- **Original design:** ~4A peak (1-2ms to open) → ~1.0-1.5A hold (PWM)
+- **Original hold power:** 1.5² × 2Ω = **4.5W** in the coil
+- **Your current setup:** 7A continuous for the entire pulse width
+- **Your current power:** 7² × 2Ω = **98W instantaneous** in the coil (22× designed hold power!)
+
+| Operating Condition | Duty Cycle | Avg Power in Coil | Risk Level |
+|---------------------|------------|-------------------|------------|
+| Idle (800 RPM) | ~2-5% | 2-5W | LOW — injector survives fine |
+| Light cruise (2500 RPM) | ~8-12% | 8-12W | MODERATE — extra heat, slow degradation |
+| Hard acceleration | ~25-35% | 25-35W | HIGH — coil insulation stressed |
+| WOT (5000+ RPM) | ~40-50% | 40-50W | **DANGER — will damage injector** |
+
+#### How the injector fails (progressive):
+1. **Coil insulation softens** — enamel wire insulation (class F, rated ~155°C) degrades from repeated overheating
+2. **Shorted turns develop** — insulation breaks down between adjacent coil windings
+3. **Impedance changes** — 2Ω drops to ~1.5Ω or lower → current INCREASES → thermal runaway
+4. **Erratic fueling** — changed impedance means different flow characteristics
+5. **Open circuit** — coil wire burns through → no fuel → lean misfire → potential engine damage
+
+#### Practical risk assessment for YOUR driving:
+- **City driving (mostly idle + light cruise):** Injector will probably last months to years — duty cycles are low
+- **Spirited driving / highway merging at WOT:** Accelerated injector degradation
+- **Sustained WOT (track day, uphill at full throttle):** Could damage injector in one session
+- **Datalog evidence:** Your logs show 98.6% of time at <10% duty — for your normal driving, the risk is LOW but cumulative
+
+#### RECOMMENDATION (in order of priority):
+1. **Best: Build the P&H circuit** (see `peak_and_hold/` folder) — 7A peak for 1.5ms, 1.2A hold. Injector runs at designed parameters. No tune changes.
+2. **Good: Add a 3.3Ω 25W wirewound resistor** in series with injector wire — limits current to ~2.6A. Increase `injOpen` to 1.5-2.0ms. Simple, cheap, effective.
+3. **Acceptable for now: Do nothing** — the Speeduino board is safe regardless. The injector is at low-to-moderate risk during normal city driving. Monitor for misfires, rough running, or changed fuel trims as signs of injector degradation.
+
+**Important:** If the injector fails, it fails GRADUALLY (not catastrophically). You'll notice rough running, changed fuel behavior, or misfires before total failure. You have time to act.
 - **Fuel:** 95 RON gasoline
 - **Production Period:** 08/1983 – 03/1988
 
@@ -54,7 +97,8 @@ With NO ballast resistor and direct drive from Speeduino's onboard VNLD5090-E:
 
 **Board:** Speeduino v0.4.4c SMD assembled version
 **Source:** diy-efi.co.uk (£155 / £186 inc VAT) — currently out of stock
-**Hardware repo:** https://github.com/speeduino/Hardware/tree/main/v0.4/SMD/Latest
+**Hardware repo:** https://github.com/speeduino/Hardware/tree/main/v0.4/SMD/Prior%20Versions/0.4.4c
+**Note:** The "Latest" folder on GitHub is v0.4.4**d**. Your actual board v0.4.4c is under "Prior Versions/0.4.4c/".
 
 #### Injector Outputs — VNLD5090-E (CRITICAL COMPONENT)
 
@@ -103,14 +147,16 @@ VNLD5090 output → 1N4448WX diode → INJ-x-OUT terminal
 
 **Bottom line:** The Speeduino board is NOT at risk. The VNLD5090-E handles 7A with ample margin. The main concern is injector longevity — 7A continuous through a 2Ω coil generates more heat than the injector was designed for (original system used higher voltage/higher resistance or P&H driving). A ballast resistor or P&H module benefits the **injector**, not the Speeduino.
 
-#### Ignition Outputs — IXDN602
+#### Ignition Outputs — TC4424A (v0.4.4c) / IXDN602 (v0.4.4d)
+
+**Your v0.4.4c board uses TC4424A** (Microchip TC4424AVOA). The newer v0.4.4d uses IXDN602.
 
 | IC | Ref | Channels | Outputs | MCU Pins | Series Resistors |
 |----|-----|----------|---------|----------|-----------------|
-| U2 | IXDN602 | A, B | IGN-1-OUT, IGN-2-OUT | D38, D40 | R13 (10Ω), R14 (10Ω) |
-| U4 | IXDN602 | A, B | IGN-3-OUT, IGN-4-OUT | D50, D52 | R27 (10Ω), R28 (10Ω) |
+| U2 | TC4424A | A, B | IGN-1-OUT, IGN-2-OUT | D38, D40 | R13 (10Ω), R14 (10Ω) |
+| U4 | TC4424A | A, B | IGN-3-OUT, IGN-4-OUT | D50, D52 | R27 (10Ω), R28 (10Ω) |
 
-- IXDN602 = 2A peak MOSFET gate driver (drives external ignition coil MOSFETs/IGBTs)
+- TC4424A = 3A dual MOSFET gate driver (drives external ignition coil MOSFETs/IGBTs)
 - Power rail: Vdrive (selectable via JP1 jumper: 5V or 12V-SW)
 - Decoupling: 0.1µF + 1µF per driver IC
 - **Not used** on this car (ignition still mechanical distributor)
