@@ -1,0 +1,17 @@
+{
+  "name": "datalogs",
+  "version": "1.0.0",
+  "description": "Comprehensive documentation for converting a 1984 VW Passat B2 with 1.6L DT engine from mechanical to Speeduino electronic fuel injection.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "mlg-converter": "^0.9.0",
+    "xlsx": "^0.18.5"
+  }
+}

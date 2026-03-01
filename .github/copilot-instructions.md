@@ -14,11 +14,30 @@ This is a **Speeduino ECU tuning project** for a 1984 VW Passat B2 with a 1.6L D
 - **Compression Ratio:** 9.0:1
 - **Power:** 55 kW (75 PS / 74 HP) @ 5000 RPM
 - **Torque:** 125 N⋅m (92 lb-ft) @ 2500 RPM
-- **Original Fuel System:** Carburetor (converted to EFI)
+- **Valvetrain:** SOHC 8V, belt-driven, **hydraulic lifters** (Hydrostößel)
+- **Original Fuel System:** Pierburg 2E2 carburetor (removed, converted to EFI)
 - **Current Fuel System:** Gol G2 SPI Monopoint (~60 lb/hr, 2 ohm injector)
+- **Fuel Pump:** 3 bar (electric, in-tank or inline)
+- **Fuel Pressure at TBI:** 1.0-1.5 bar (regulated by fuel pressure regulator built into the TBI unit)
 - **ECU:** Speeduino v0.4.3d, firmware 2025.01.6
 - **Fuel:** 95 RON gasoline
 - **Production Period:** 08/1983 – 03/1988
+
+### Hydraulic Lifters — Important Implications
+
+The DT engine uses **hydraulic valve lifters** (Hydrostößel). This has two critical consequences:
+
+1. **RPM Limitation:** Hydraulic lifters can "pump up" (fail to bleed down fast enough) at high RPM, preventing valves from fully closing. Safe limit ~6200-6500 RPM. Compare with later EA827 8V EFI engines (ABU/AEA in Golf 3) that switched to **solid lifters** (Tassenstößel) and had factory 6500 RPM limiters.
+
+2. **Knock Sensor Incompatible:** Hydraulic lifters produce broadband noise in the 4-10 kHz range, which overlaps the knock frequency of this engine (6-8 kHz). A knock sensor would constantly false-trigger. **Do NOT install a knock sensor** on this engine. Use conservative timing maps (32-33° max WOT vs 36° theoretical) as substitute for knock protection.
+
+### EA827 Family RPM Comparison
+| Engine | CR | Lifters | Factory Rev Limit | Notes |
+|--------|------|---------|-------------------|-------|
+| DT (Passat B2) | 9.0:1 | Hydraulic | None (carb) | Peak power @ 5000 |
+| ABU (Golf 3) | 9.0:1 | Solid | 6500 RPM | SPI, 75 PS @ 5000 |
+| AEA (Golf 3) | 9.0:1 | Solid | 6500 RPM | MPI, 75 PS @ 5000 |
+| ABF (Golf 3 GTI 16V) | 10.0:1 | Solid | 7200 RPM | 150 PS @ 6000 |
 
 > **Note:** There's also a JU engine code with same power but @ 5500 RPM. Verify your block stamping.
 
@@ -37,6 +56,29 @@ This is a **Speeduino ECU tuning project** for a 1984 VW Passat B2 with a 1.6L D
 - **Rotor Rotation:** Clockwise
 
 **IMPORTANT:** Because the distributor has mechanical advance, Speeduino ignition tables would CONFLICT with the mechanical advance. Currently using "Basic Distributor" trigger with fixed timing output.
+
+### Vacuum System Layout
+
+From Haynes manual Fig. 3.2 — current state after carb removal:
+
+| Connection | Diameter | Status | Notes |
+|-----------|----------|--------|-------|
+| **Brake servo** | 10mm hose | ✅ Connected, working | Has its own check valve on servo. Separate from everything else. |
+| **Distributor vacuum advance** | 3-4mm | ✅ Connected | Single nipple on distributor ("A" = Black hose). Connects to manifold vacuum. |
+| **Green plastic ball** | 3-4mm, single nipple | ❌ Not needed | Vacuum reservoir for Pierburg 2E2 carb pulldown mechanism. Obsolete with EFI. |
+| **Vacuum Unit Stage II** | N/A | ❌ Removed | Was part of the carb body, not a separate component. |
+| **Econometer / Gear change indicator** | N/A | ❌ Not fitted | Optional from factory, this car doesn't have them. |
+
+### Thermostatic Air Cleaner (Warmluftregelung)
+
+The air filter box has a **thermostatic air intake system** (TAC):
+- **Control box:** Vacuum-operated flap on air filter housing
+- **Temperature regulator:** Bimetallic sensor inside air filter housing, connected to intake manifold vacuum
+- **Heat source:** Heizbirne (heat shroud) on exhaust manifold — **present and intact**
+- **Hot air duct:** Corrugated aluminum tube from Heizbirne to air box — **MISSING, needs replacement** (~60mm Alu-Flexrohr + 2 clamps)
+- **How it works:** Cold → sensor closes vacuum bleed → flap opens to hot air. Warm (>25-35°C) → bleed opens → spring pushes flap to cold air.
+- **Still useful with TBI:** Single-point injection injects above throttle plate; warm air helps fuel stay atomized through manifold. Less critical than with carb, but keep the system working.
+- **If flap stuck on HOT:** ~3-5% power loss (hot air = less dense). Check occasionally.
 
 ### New Electronic Distributor (PURCHASED - NOT YET INSTALLED)
 **Plan:** First make car run reliably with current setup → Pass IPO (inspection) → Then install electronic distributor for Speeduino ignition control.
@@ -186,18 +228,18 @@ If you hear metallic pinging/rattling under load:
 
 ### IAC Configuration (CORRECT VALUES)
 ```
-iacAlgorithm: Stepper Open Loop
+iacAlgorithm: None (IAC physically disconnected — butterfly screw handles idle air)
 iacStepHome: 165 steps (home position = fully closed)
 iacMaxSteps: 162 steps (safe software limit)
 iacCLminValue: 0 steps (full range for closed loop)
-iacCLmaxValue: 162 steps (safe closed loop limit) ⚠️ CURRENTLY 54 IN MSQ - NEEDS FIX!
+iacCLmaxValue: 162 steps (safe closed loop limit) ✅ FIXED (was 54)
 iacStepHyster: 3 steps
 iacStepTime: 3 ms
 iacStepperInv: No (tables are inverted instead)
 ```
 
-> ⚠️ **ISSUE IN CurrentTune.msq:** `iacCLmaxValue = 54` should be `162`!
-> This severely limits closed-loop range. Fix before enabling closed-loop mode.
+> ✅ **FIXED (2026-02-28):** `iacCLmaxValue` changed from 54 → 162.
+> IAC algorithm set to "None" because IAC valve is physically disconnected. Butterfly bypass screw handles all idle air.
 
 ### IAC Tables Philosophy
 Since the throttle body has a **butterfly bypass screw** that provides base idle air:
@@ -269,6 +311,49 @@ npx mlg-converter --format=csv 2025-12-20_16.57.13.mlg
 - **Cause:** No idle air (IAC not installed, butterfly screw not adjusted)
 - **Solution:** Install IAC or temporarily open butterfly screw
 
+### 5. VE Table Hot Idle — FIXED (2026-02-28)
+- **Problem:** Hot idle running rich (AFR 12.5-12.8 vs target 14.7)
+- **Analysis:** Datalog analysis of 2026-02-28_17.53.41.mlg + 2026-02-28_18.10.43.mlg (20,697 data points, hot CLT≥75°C filtered)
+- **Fix:** 5 cells corrected:
+  - RPM 1200 / MAP 30 kPa: **→ 36** (reduced from over-rich value)
+  - RPM 1200 / MAP 36 kPa: **→ 34**
+  - RPM 1200 / MAP 40 kPa: **→ 34**
+  - RPM 1800 / MAP 26 kPa: **→ 43**
+  - RPM 2200 / MAP 26 kPa: **→ 45**
+- **Reference files:** DataLogs/ve_refined_analysis.js, DataLogs/VE_TABLE_CORRECTED.xlsx
+
+### 6. WUE (Warmup Enrichment) — FIXED (2026-02-28)
+- **Problem:** Cold running too lean (AFR 16-17.6 at CLT 28-50°C)
+- **Analysis:** Cold start data from 2026-02-28_17.53.41.mlg (CLT < 75°C segments)
+- **Fix:** WUE bins corrected:
+  - -40°C: 195 (+16) | -20°C: 190 (+16) | 0°C: 182 (+17)
+  - 20°C: 154 (+16) | 28°C: 150 (+17) | 37°C: 138 (+10)
+  - 50°C: 122 (+4) | 65°C: 110 (unchanged) | 76°C: 102 (unchanged) | 85°C+: 100
+- **Reference files:** DataLogs/create_wue_excel.js, DataLogs/WUE_TABLE_CORRECTED.xlsx
+
+### 7. Rev Limiter — FIXED (2026-02-28)
+- **Problem:** Engine reached 7060 RPM in datalog with no protection. hardRevLim was 7000 (too high for DT).
+- **Analysis:**
+  - DT cam makes no power above 5500 RPM
+  - Hydraulic lifters safe to ~6200-6500 RPM
+  - VW cluster redline starts ~6200 RPM
+  - 40-year-old valve springs, gudgeon pin clips — conservative approach
+  - Mean piston speed at 6200 = 15.9 m/s (safe, limit ~18-20 m/s)
+- **Fix:**
+  - `hardRevLim`: **6200 RPM** (fuel cut — this is the only effective one)
+  - `SoftRevLim`: **6000 RPM** (useless until Speeduino controls ignition, but set correctly for future)
+- **Note:** If engine is rebuilt with new springs: can increase to 6500.
+
+### 8. iacCLmaxValue — FIXED (2026-02-28)
+- **Problem:** Was 54, limiting closed-loop IAC range to 33% of physical travel
+- **Fix:** Changed to **162** (98% of 165-step physical limit, 3-step safety margin)
+
+### 9. DFCO (Deceleration Fuel Cut-Off) — MUST STAY OFF
+- **Problem:** DFCO is dangerous with mechanical distributor
+- **Reason:** On deceleration, manifold vacuum reaches ~20-25 kPa → mechanical distributor advances timing to 35-40° BTDC. When DFCO restores fuel after the cut period, combustion occurs with extreme advance + lean mixture = **intake backfire risk**.
+- **Original car:** Pierburg 2E2 carb had an overrun control valve that never fully cut fuel, just leaned it out gradually. DFCO is a different (abrupt) approach that doesn't work with mechanical advance.
+- **Fix:** Keep `dfcoEnabled = 0`. Only enable after installing VIKA electronic distributor with Speeduino ignition control (Speeduino will retard timing on fuel restore).
+
 ## DRV8825 Stepper Driver Configuration
 
 ### Potentiometer Adjustment (Per Speeduino Manual)
@@ -326,6 +411,10 @@ npx mlg-converter --format=csv $(ls -t *.mlg | head -1)
 4. **Don't disconnect IAC while Speeduino is powered** - Back-EMF damages driver
 5. **Don't assume butterfly screw is open** - User prefers IAC for all idle air control
 6. **Don't skip trigger angle calibration** - Without it, timing will be wrong by 60-90°!
+7. **Don't enable DFCO with mechanical distributor** - Distributor advances 35-40° at high vacuum on decel. Fuel restore after cut → lean + extreme advance = backfire. Only enable after VIKA electronic distributor + Speeduino ignition control.
+8. **Don't install a knock sensor on this engine** - Hydraulic lifters produce 4-10 kHz noise that overlaps knock frequency (6-8 kHz). Constant false triggers. Use conservative timing maps instead.
+9. **Don't set hardRevLim above 6200 RPM** - Hydraulic lifters, 40-year-old springs, DT cam makes no power above 5500. If engine rebuilt with new springs: 6500 max.
+10. **Don't remove the thermostatic air cleaner** - TBI injects above throttle plate; warm intake air helps fuel atomization through manifold, especially during cold starts.
 
 ## Useful References
 
