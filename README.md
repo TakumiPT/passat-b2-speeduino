@@ -100,7 +100,7 @@ The v0.4.4c board uses **STMicroelectronics VNLD5090-E** smart low-side drivers 
 
 ### Coolant System Sensors
 
-The original Passat B2 coolant flange (**VW 026.121.133.9**, right side of cylinder head) had 2 thermoswitches for the Pierburg 2E2 carb system. These are replaced with **Gol G2 sensors**:
+The original Passat B2 coolant flange (**VW 026.121.133.9**, right side of cylinder head) had 2 thermoswitches (**VW 026 919 369**) for the Pierburg 2E2 carb cold-start circuit (manifold heater, choke heater, pull-down heater). These are replaced with **Gol G2 sensors** (purchased as a kit):
 
 | Position | Sensor | Function |
 |----------|--------|----------|
@@ -108,7 +108,7 @@ The original Passat B2 coolant flange (**VW 026.121.133.9**, right side of cylin
 | Flange bottom | **MTE-Thomson 3018** | Dashboard temp gauge sender |
 | Back of head (original) | Facet 7.3073 | Redundant when 3018 installed |
 
-> **Manifold heater:** The electric heater under the intake manifold is **dead** — its thermoswitch was replaced by the 4053 CLT sensor. Higher ASE values compensate for cold manifold fuel condensation.
+> **Manifold heater:** The electric heater under the intake manifold is **dead** — its thermoswitch (VW 026 919 369) was replaced by the MTE-Thomson 4053 CLT sensor. Higher ASE values compensate for cold manifold fuel condensation.
 
 ---
 
@@ -333,7 +333,7 @@ With a **mechanical distributor**, deceleration creates high manifold vacuum (20
 | 9 | Poor idle stability (σ=60 RPM) | 🔧 Open | Needs IAC or butterfly adjustment |
 | 10 | No hot running data (CLT 80°C+) | 🔧 Open | Need longer datalog |
 | 11 | ASE too low for cold start (AFR 17 at 26°C) | 🔧 Open | Change asePct to 155/151/101/30 |
-| 12 | Intake manifold heater dead | ℹ️ Known | Thermoswitch replaced by CLT sensor; ASE compensates |
+| 12 | Intake manifold heater dead | ℹ️ Known | Thermoswitch 026 919 369 replaced by CLT sensor; ASE compensates |
 
 ---
 

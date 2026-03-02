@@ -232,12 +232,12 @@ The air filter box has a **thermostatic air intake system** (TAC):
 
 **Coolant Flange:** VW 026.121.133.9 (right side of cylinder head)
 
-The original Passat B2 had **2 thermoswitches** in this flange, both part of the Pierburg 2E2 carb cold-start circuit (manifold heater, choke heater, pull-down heater). These have been **replaced with Gol G2 sensors** (purchased as a kit):
+The original Passat B2 had **2 thermoswitches** (**VW 026 919 369**) in this flange, both part of the Pierburg 2E2 carb cold-start circuit (manifold heater, choke heater, pull-down heater). These have been **replaced with Gol G2 sensors** (purchased as a kit):
 
 | Position | Original (Passat B2) | Current (Gol G2 kit) | Function |
 |----------|---------------------|---------------------|----------|
-| Top | Thermoswitch (removed) | **MTE-Thomson 4053** (marked "5k") | CLT sensor for Speeduino — NTC 5kΩ @ 25°C |
-| Bottom | Thermoswitch (orphaned) | **MTE-Thomson 3018** (marked "5l") | Dashboard temperature gauge sender |
+| Top | Thermoswitch 026 919 369 (removed) | **MTE-Thomson 4053** (marked "5k") | CLT sensor for Speeduino — NTC 5kΩ @ 25°C |
+| Bottom | Thermoswitch 026 919 369 (removed) | **MTE-Thomson 3018** (marked "5l") | Dashboard temperature gauge sender |
 
 **All temperature-related sensors on this engine:**
 
@@ -254,8 +254,8 @@ The original Passat B2 had **2 thermoswitches** in this flange, both part of the
 
 The intake manifold has an **electric heater** (thick red wire underneath) designed to warm the manifold during cold starts, reducing fuel condensation on cold walls.
 
-- **Original circuit:** Activated by one of the 2 thermoswitches in coolant flange 026.121.133.9
-- **Current status:** **DEAD** — the thermoswitch was removed and replaced with the MTE-Thomson 4053 NTC sensor (different electrical behavior — NTC sensor varies resistance, thermoswitch is on/off)
+- **Original circuit:** Activated by thermoswitch VW 026 919 369 in coolant flange 026.121.133.9
+- **Current status:** **DEAD** — the thermoswitch (026 919 369) was removed and replaced with the MTE-Thomson 4053 NTC sensor (different electrical behavior — NTC sensor varies resistance, thermoswitch is on/off)
 - **Impact:** Cold manifold walls condense more fuel during warmup → higher ASE values needed than Gol G2 factory
 - **Mitigation:** ASE fix (issue 6b) compensates with extra fuel. Thermostatic air cleaner provides warm air to help atomization.
 
