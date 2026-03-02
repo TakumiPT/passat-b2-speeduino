@@ -69,6 +69,8 @@
 | Fuel pressure | 1.0–1.5 bar | Regulated by TBI built-in FPR |
 | IAC valve | Bosch 0269980492 | 4-wire bipolar stepper, 165 steps, inverted operation |
 | MAP sensor | MPX4250AP | Onboard Speeduino |
+| CLT sensor | **MTE-Thomson 4053** (NTC 5kΩ @ 25°C) | In coolant flange VW 026.121.133.9 |
+| Gauge sender | **MTE-Thomson 3018** | Dashboard temp gauge (replaces Facet 7.3073) |
 | Trigger | Hall sensor in distributor | "Basic Distributor" pattern |
 
 ### Injector Details
@@ -95,6 +97,18 @@ The v0.4.4c board uses **STMicroelectronics VNLD5090-E** smart low-side drivers 
 - Built-in overcurrent limiting, thermal shutdown (auto-restart), ESD, overvoltage clamp
 - **The Speeduino board is NOT at risk.** The VNLD5090-E handles 7A with ample margin.
 - The concern is **injector coil longevity**, not board damage.
+
+### Coolant System Sensors
+
+The original Passat B2 coolant flange (**VW 026.121.133.9**, right side of cylinder head) had 2 thermoswitches for the Pierburg 2E2 carb system. These are replaced with **Gol G2 sensors**:
+
+| Position | Sensor | Function |
+|----------|--------|----------|
+| Flange top | **MTE-Thomson 4053** (NTC 5kΩ @ 25°C) | CLT for Speeduino ECU |
+| Flange bottom | **MTE-Thomson 3018** | Dashboard temp gauge sender |
+| Back of head (original) | Facet 7.3073 | Redundant when 3018 installed |
+
+> **Manifold heater:** The electric heater under the intake manifold is **dead** — its thermoswitch was replaced by the 4053 CLT sensor. Higher ASE values compensate for cold manifold fuel condensation.
 
 ---
 
@@ -227,7 +241,7 @@ Two test sessions were logged consecutively.
 
 ### MLG1 — Baseline: No resistor, corrected voltage table
 
-**Result: Engine STARTED and ran for 158 seconds, then stalled.**
+**Result: Engine STARTED and ran for 158 seconds. User turned key off (not a stall).**
 
 | Metric | Value | Assessment |
 |--------|-------|-----------|
@@ -240,7 +254,7 @@ Two test sessions were logged consecutively.
 | Max RPM | 1528 | Idle only, no driving |
 | Sync losses | 0 | ✅ Trigger solid |
 | Duty cycle | 5–12% | ✅ Safe for injector |
-| Stall | Yes, at CLT 47°C, AFR 19.7 | ⚠️ WUE decays too fast |
+| Engine stop | User turned key OFF at CLT 47°C | ✅ Not a stall — intentional shutdown |
 
 **AFR warmup progression:**
 
@@ -250,9 +264,9 @@ Two test sessions were logged consecutively.
 | 15–45s | 12.7–13.7 | 27–29°C | 149–151% |
 | 45–105s | 12.6–13.0 | 31–39°C | 136–146% |
 | 105–150s | 15.6–18.9 (lean!) | 43–45°C | 129–131% |
-| Stall | 19.7 | 47°C | ~127% |
+| Key OFF | — | 47°C | ~127% |
 
-**Diagnosis:** WUE enrichment decays too aggressively in the 40–55°C range. The VE table for hot idle (~80°C+) has not been tuned yet because the engine hasn't reached operating temperature in any datalog so far.
+**Diagnosis:** Engine was running fine at CLT 46–47°C. User intentionally turned ignition off (proven by stable RPM + sharp battery voltage drop 12.8→6.8V in 0.1s). No WUE issue at this temperature. The VE table for hot idle (~80°C+) has not been tuned yet because the engine hasn't reached operating temperature in any datalog so far.
 
 ### MLG2 — With 3.3Ω resistor
 
@@ -315,9 +329,11 @@ With a **mechanical distributor**, deceleration creates high manifold vacuum (20
 | 5 | Cold running lean (AFR 16–17.6 at 28–50°C) | ✅ Fixed | WUE bins increased by 4–17% |
 | 6 | Voltage correction flat (98–110%) | ✅ Fixed | Corrected to 70–255% range |
 | 7 | 3.3Ω resistor prevents start | ✅ Diagnosed | Need 1.8Ω (see analysis above) |
-| 8 | Lean stall at CLT 40–50°C | 🔧 Open | WUE decay too fast in this range |
+| 8 | Apparent lean stall at CLT 40–50°C | ✅ Resolved | Not a stall — user turned key off intentionally |
 | 9 | Poor idle stability (σ=60 RPM) | 🔧 Open | Needs IAC or butterfly adjustment |
 | 10 | No hot running data (CLT 80°C+) | 🔧 Open | Need longer datalog |
+| 11 | ASE too low for cold start (AFR 17 at 26°C) | 🔧 Open | Change asePct to 155/151/101/30 |
+| 12 | Intake manifold heater dead | ℹ️ Known | Thermoswitch replaced by CLT sensor; ASE compensates |
 
 ---
 
@@ -396,9 +412,11 @@ py ballast_resistor_engineering.py  # Complete resistor calculations
 ## Future Plans
 
 ### Phase 1: Baseline Tune (current)
-- Fix WUE decay at 40–55°C (stall issue)
+- Apply ASE fix (155/151/101/30) for cold start enrichment
 - Get stable warm idle at 80°C+
 - Collect longer datalogs (5–10 min drives)
+- Verify CLT sensor calibration (MTE-Thomson 4053) with known-accurate thermometer
+- Install MTE-Thomson 3018 gauge sender in coolant flange
 
 ### Phase 2: Ballast Resistor
 - Install **1.8Ω / 25W wirewound** in series with injector

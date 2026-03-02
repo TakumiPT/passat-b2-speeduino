@@ -86,7 +86,7 @@ The IWM500.01 was designed for **peak-and-hold drive** by the original Magneti M
 
 #### RECOMMENDATION (in order of priority):
 1. **Best: Build the P&H circuit** (see `peak_and_hold/` folder) — 7A peak for 1.5ms, 1.2A hold. Injector runs at designed parameters. No tune changes.
-2. **Good: Add a 3.3Ω 25W wirewound resistor** in series with injector wire — limits current to ~2.6A. Increase `injOpen` to 1.5-2.0ms. Simple, cheap, effective.
+2. **Good: Add a 1.8Ω 25W wirewound ceramic resistor** in series with injector wire — limits current to ~3.8A @ 14.4V, still opens at cranking voltage (2.24A > 2.0A pull-in). Increase `injOpen` to ~1.1ms. (3.3Ω tested 2026-03-01 and FAILED — current too low to open injector during cranking.)
 3. **Acceptable for now: Do nothing** — the Speeduino board is safe regardless. The injector is at low-to-moderate risk during normal city driving. Monitor for misfires, rough running, or changed fuel trims as signs of injector degradation.
 
 **Important:** If the injector fails, it fails GRADUALLY (not catastrophically). You'll notice rough running, changed fuel behavior, or misfires before total failure. You have time to act.
@@ -132,17 +132,17 @@ VNLD5090 output → 1N4448WX diode → INJ-x-OUT terminal
 
 #### 7A Current Analysis (This Car's Setup)
 
-| Parameter | Without Resistor (now) | With 3.3Ω Resistor | With Peak-and-Hold |
-|-----------|----------------------|--------------------|--------------------|
-| Peak current | 7A | 2.6A | 7A (1.5ms only) |
-| Hold current | 7A (full pulse) | 2.6A (full pulse) | 1.2A (PWM) |
-| VNLD5090 utilization | 54% of 13A rating | 20% of 13A rating | ~1mA (sense only) |
-| VNLD5090 instant power | ~3.4W (est. 70mΩ Rds) | ~0.5W | negligible |
-| Avg power @ idle (2% duty) | 0.07W | 0.01W | negligible |
-| Avg power @ WOT (45% duty) | 1.5W | 0.22W | negligible |
+| Parameter | Without Resistor (now) | With 1.8Ω Resistor (recommended) | With Peak-and-Hold |
+|-----------|----------------------|--------------------|--------------------||
+| Peak current | 7A | 3.8A | 7A (1.5ms only) |
+| Hold current | 7A (full pulse) | 3.8A (full pulse) | 1.2A (PWM) |
+| VNLD5090 utilization | 54% of 13A rating | 29% of 13A rating | ~1mA (sense only) |
+| VNLD5090 instant power | ~3.4W (est. 70mΩ Rds) | ~1.0W | negligible |
+| Avg power @ idle (2% duty) | 0.07W | 0.02W | negligible |
+| Avg power @ WOT (45% duty) | 1.5W | 0.45W | negligible |
 | VNLD5090 risk | **SAFE** ✅ | Very safe ✅ | Zero load ✅ |
-| Injector heating | High (7A continuous) | Normal (2.6A) | Optimal (1.2A hold) |
-| `injOpen` setting | 1.0ms | 1.5-2.0ms | 1.0ms |
+| Injector heating | High (7A continuous) | Moderate (3.8A) | Optimal (1.2A hold) |
+| `injOpen` setting | 1.0ms | ~1.1ms | 1.0ms |
 | Tune changes needed | None | `injOpen` only | None (P&H handles it) |
 
 **Bottom line:** The Speeduino board is NOT at risk. The VNLD5090-E handles 7A with ample margin. The main concern is injector longevity — 7A continuous through a 2Ω coil generates more heat than the injector was designed for (original system used higher voltage/higher resistance or P&H driving). A ballast resistor or P&H module benefits the **injector**, not the Speeduino.
@@ -227,6 +227,45 @@ The air filter box has a **thermostatic air intake system** (TAC):
 - **How it works:** Cold → sensor closes vacuum bleed → flap opens to hot air. Warm (>25-35°C) → bleed opens → spring pushes flap to cold air.
 - **Still useful with TBI:** Single-point injection injects above throttle plate; warm air helps fuel stay atomized through manifold. Less critical than with carb, but keep the system working.
 - **If flap stuck on HOT:** ~3-5% power loss (hot air = less dense). Check occasionally.
+
+### Coolant System — Sensors & Flange
+
+**Coolant Flange:** VW 026.121.133.9 (right side of cylinder head)
+
+The original Passat B2 had **2 thermoswitches** in this flange, both part of the Pierburg 2E2 carb cold-start circuit (manifold heater, choke heater, pull-down heater). These have been **replaced with Gol G2 sensors** (purchased as a kit):
+
+| Position | Original (Passat B2) | Current (Gol G2 kit) | Function |
+|----------|---------------------|---------------------|----------|
+| Top | Thermoswitch (removed) | **MTE-Thomson 4053** (marked "5k") | CLT sensor for Speeduino — NTC 5kΩ @ 25°C |
+| Bottom | Thermoswitch (orphaned) | **MTE-Thomson 3018** (marked "5l") | Dashboard temperature gauge sender |
+
+**All temperature-related sensors on this engine:**
+
+| Location | Sensor | Function | Status |
+|----------|--------|----------|--------|
+| Coolant flange (top) | MTE-Thomson 4053 | Speeduino CLT input | ✅ Installed |
+| Coolant flange (bottom) | MTE-Thomson 3018 | Dashboard gauge sender | ⏳ To install (replaces Facet 7.3073) |
+| Back of cylinder head | Facet 7.3073 | Dashboard gauge sender (original Passat) | ✅ Currently installed — becomes redundant when 3018 installed |
+| Radiator | Fan thermoswitch | Radiator fan on/off | ✅ Installed, independent circuit |
+
+> **Gol G2 approach:** Both ECU sensor and gauge sender are in the coolant flange. No separate sender on the back of the head. This project follows the same layout.
+
+### Intake Manifold Heater — DEAD
+
+The intake manifold has an **electric heater** (thick red wire underneath) designed to warm the manifold during cold starts, reducing fuel condensation on cold walls.
+
+- **Original circuit:** Activated by one of the 2 thermoswitches in coolant flange 026.121.133.9
+- **Current status:** **DEAD** — the thermoswitch was removed and replaced with the MTE-Thomson 4053 NTC sensor (different electrical behavior — NTC sensor varies resistance, thermoswitch is on/off)
+- **Impact:** Cold manifold walls condense more fuel during warmup → higher ASE values needed than Gol G2 factory
+- **Mitigation:** ASE fix (issue 6b) compensates with extra fuel. Thermostatic air cleaner provides warm air to help atomization.
+
+### CLT Sensor Calibration — TO VERIFY
+
+The MTE-Thomson 4053 (5kΩ @ 25°C NTC) is **not** one of the preset thermistor options in TunerStudio. The Speeduino v0.4 board has a **2490Ω bias resistor** (R10 for CLT, R11 for IAT).
+
+**To calibrate:** TunerStudio → Tools → Calibrate Thermistor Tables → Coolant Temperature Sensor → "3 Point Therm Generator" → enter 3 known resistance-temperature points for the MTE-Thomson 4053.
+
+**Current status:** CLT readings appear plausible in datalogs (26°C cold matching ambient, warming to 47°C during running). Verify with a known-accurate thermometer to confirm accuracy — wrong CLT affects WUE, ASE, cranking enrichment, and all temperature-dependent corrections.
 
 ### New Electronic Distributor (PURCHASED - NOT YET INSTALLED)
 **Plan:** First make car run reliably with current setup → Pass IPO (inspection) → Then install electronic distributor for Speeduino ignition control.
@@ -471,13 +510,29 @@ npx mlg-converter --format=csv 2025-12-20_16.57.13.mlg
 - **Reference files:** DataLogs/ve_refined_analysis.js, DataLogs/VE_TABLE_CORRECTED.xlsx
 
 ### 6. WUE (Warmup Enrichment) — FIXED (2026-02-28)
-- **Problem:** Cold running too lean (AFR 16-17.6 at CLT 28-50°C)
-- **Analysis:** Cold start data from 2026-02-28_17.53.41.mlg (CLT < 75°C segments)
-- **Fix:** WUE bins corrected:
+- **Problem (Feb 28):** Cold running too lean (AFR 16-17.6 at CLT 28-50°C)
+- **Analysis (Feb 28):** Cold start data from 2026-02-28_17.53.41.mlg (CLT < 75°C segments)
+- **Fix (Feb 28):** WUE bins corrected:
   - -40°C: 195 (+16) | -20°C: 190 (+16) | 0°C: 182 (+17)
   - 20°C: 154 (+16) | 28°C: 150 (+17) | 37°C: 138 (+10)
   - 50°C: 122 (+4) | 65°C: 110 (unchanged) | 76°C: 102 (unchanged) | 85°C+: 100
-- **Reference files:** DataLogs/create_wue_excel.js, DataLogs/WUE_TABLE_CORRECTED.xlsx
+- **Mar 1 re-analysis:** Initially appeared lean at CLT 46-47°C, but further analysis revealed:
+  - MLG1 ending was user turning ignition key OFF — NOT a stall (proven: stable RPM 970 + battery 12.8→6.8V in 0.1s = ignition cutoff)
+  - IAC disconnected, butterfly screw in fixed Gol G2 factory position — no idle air variability
+  - Engine was running fine at CLT 46-47°C with Feb 28 WUE values
+  - **No WUE change needed.** Feb 28 values (37°C: 138, 50°C: 122) are correct.
+- **Reference files:** DataLogs/wue_definitive.py, DataLogs/wue_ase_refined.py
+
+### 6b. ASE (After Start Enrichment) — NEEDS FIX (2026-03-01)
+- **Problem:** First 17s after cold start at 26°C: AFR 17.0 (target: 13.2). After ASE expires, AFR normalizes to 13.1 — proving WUE is correct and only ASE magnitude is insufficient.
+- **Analysis:** 2026-03-01_19.05.30.mlg — 255 ASE-period samples (0-17s after start), 1659 post-ASE samples. Gammae with ASE = 270%, without = 159%. Current ASE at 26°C = 69.8% (interpolated 70.5%, matches ✅). Needed: 118.4%. Scale factor: 1.68×.
+- **Fix:** ASE% bins (asePct) to change:
+  - -20°C: 100 → **155** (TunerStudio max limit; calculated 168 but capped) | 0°C: 90 → **151** | 40°C: 60 → **101** | 80°C: 30 → **30** (keep)
+  - 155 cap only affects -20°C bin — at 26°C start the interpolated value is 118.5% (unaffected by cap)
+  - ASE duration (aseCount): **NO CHANGE** — 25s, 20s, 15s, 6s (verified correct)
+  - ASE bins (aseBins): **NO CHANGE** — -20°C, 0°C, 40°C, 80°C
+  - **Note:** Higher ASE needed partly because the intake manifold heater is dead (thermoswitch replaced by CLT sensor)
+- **Reference files:** DataLogs/wue_ase_refined.py, DataLogs/wue_ase_fix_analysis.py
 
 ### 7. Rev Limiter — FIXED (2026-02-28)
 - **Problem:** Engine reached 7060 RPM in datalog with no protection. hardRevLim was 7000 (too high for DT).
@@ -495,6 +550,18 @@ npx mlg-converter --format=csv 2025-12-20_16.57.13.mlg
 ### 8. iacCLmaxValue — FIXED (2026-02-28)
 - **Problem:** Was 54, limiting closed-loop IAC range to 33% of physical travel
 - **Fix:** Changed to **162** (98% of 165-step physical limit, 3-step safety margin)
+
+### 10. VE Table Hot-Idle vs Warmup Interaction — RESOLVED (2026-03-01)
+- **Observation:** The Feb 28 hot-idle VE correction (RPM 1200 / MAP 36-40 → 34) creates a valley at RPM 1200 that theoretically affects warmup-temperature running (6.8% less fuel at ~970 RPM due to interpolation toward RPM 1200).
+- **Resolution:** Engine ran fine at CLT 46-47°C with original WUE values (138/122) — the VE valley does not cause a real-world problem. No WUE compensation needed, no VE change needed.
+- **Status:** Closed. Monitor if idle RPM target changes significantly.
+
+### 11. Ballast Resistor Test — 3.3Ω PROVEN TOO HIGH (2026-03-01)
+- **Problem:** 3.3Ω wirewound resistor tested on 2026-03-01 — engine did NOT start
+- **Analysis:** 2026-03-01_19.08.45.mlg — 1092 samples, 115 cranking, 0 running. Peak RPM 262. AFR rising 16.3→19.7 (residual fuel evaporating, zero injection).
+- **Root cause:** I = V/R = 9.2V / 5.3Ω = 1.74A < 2.0A pull-in threshold. Minimum voltage to open injector with 3.3Ω: 10.6V — 0 of 115 cranking samples reached this voltage.
+- **Correct value:** 1.8Ω / 25W wirewound ceramic (I_crank=2.24A, +12% margin). Only 1.8Ω and 2.2Ω satisfy all constraints.
+- **Reference files:** DataLogs/ballast_resistor_engineering.py, DataLogs/analyze_mar1_performance.py
 
 ### 9. DFCO (Deceleration Fuel Cut-Off) — MUST STAY OFF
 - **Problem:** DFCO is dangerous with mechanical distributor
