@@ -69,8 +69,8 @@
 | Fuel pressure | 1.0–1.5 bar | Regulated by TBI built-in FPR |
 | IAC valve | Bosch 0269980492 | 4-wire bipolar stepper, 165 steps, inverted operation |
 | MAP sensor | MPX4250AP | Onboard Speeduino |
-| CLT sensor | **MTE-Thomson 4053** (NTC 5kΩ @ 25°C) | In coolant flange VW 026.121.133.9 |
-| Gauge sender | **MTE-Thomson 3018** | Dashboard temp gauge (replaces Facet 7.3073) |
+| CLT sensor | **Bosch NTC** (unknown part#) | In coolant flange VW 026.121.133.9 (top, M10) |
+| Gauge sender | Facet 7.3073 (back of head) | MTE-Thomson 3018 purchased, not yet installed |
 | Trigger | Hall sensor in distributor | "Basic Distributor" pattern |
 
 ### Injector Details
@@ -100,15 +100,17 @@ The v0.4.4c board uses **STMicroelectronics VNLD5090-E** smart low-side drivers 
 
 ### Coolant System Sensors
 
-The original Passat B2 coolant flange (**VW 026.121.133.9**, right side of cylinder head) had 2 thermoswitches (**VW 026 919 369**) for the Pierburg 2E2 carb cold-start circuit (manifold heater, choke heater, pull-down heater). These are replaced with **Gol G2 sensors** (purchased as a kit):
+The original Passat B2 coolant flange (**VW 026.121.133.9**, right side of cylinder head) had 2 thermoswitches (**035 919 369 C** top/M10 + **026 919 369** bottom) for the Pierburg 2E2 carb cold-start circuit.
 
-| Position | Sensor | Function |
-|----------|--------|----------|
-| Flange top | **MTE-Thomson 4053** (NTC 5kΩ @ 25°C) | CLT for Speeduino ECU |
-| Flange bottom | **MTE-Thomson 3018** | Dashboard temp gauge sender |
-| Back of head (original) | Facet 7.3073 | Redundant when 3018 installed |
+| Position | Original | Current | Planned (Gol G2) |
+|----------|----------|---------|-------------------|
+| Top (M10) | 035 919 369 C (removed) | **Bosch NTC** (unknown part#) → Speeduino CLT | MTE-Thomson 4053 |
+| Bottom (~M14) | 026 919 369 | Still installed (original) | MTE-Thomson 3018 |
+| Back of head | Facet 7.3073 | Dashboard gauge sender | Redundant when 3018 installed |
 
-> **Manifold heater:** The electric heater under the intake manifold is **dead** — its thermoswitch (VW 026 919 369) was replaced by the MTE-Thomson 4053 CLT sensor. Higher ASE values compensate for cold manifold fuel condensation.
+> **Manifold heater:** The electric heater under the intake manifold is **dead** — the top thermoswitch (035 919 369 C) was replaced by the Bosch NTC sensor, breaking the heater circuit. Higher ASE values compensate for cold manifold fuel condensation.
+>
+> **MTE-Thomson kit (4053 + 3018):** Purchased, not yet installed. Will match the Gol G2 configuration.
 
 ---
 
@@ -333,7 +335,7 @@ With a **mechanical distributor**, deceleration creates high manifold vacuum (20
 | 9 | Poor idle stability (σ=60 RPM) | 🔧 Open | Needs IAC or butterfly adjustment |
 | 10 | No hot running data (CLT 80°C+) | 🔧 Open | Need longer datalog |
 | 11 | ASE too low for cold start (AFR 17 at 26°C) | 🔧 Open | Change asePct to 155/151/101/30 |
-| 12 | Intake manifold heater dead | ℹ️ Known | Thermoswitch 026 919 369 replaced by CLT sensor; ASE compensates |
+| 12 | Intake manifold heater dead | ℹ️ Known | Top thermoswitch 035 919 369 C replaced by Bosch NTC; ASE compensates |
 
 ---
 

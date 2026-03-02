@@ -232,40 +232,42 @@ The air filter box has a **thermostatic air intake system** (TAC):
 
 **Coolant Flange:** VW 026.121.133.9 (right side of cylinder head)
 
-The original Passat B2 had **2 thermoswitches** (**VW 026 919 369**) in this flange, both part of the Pierburg 2E2 carb cold-start circuit (manifold heater, choke heater, pull-down heater). These have been **replaced with Gol G2 sensors** (purchased as a kit):
+The original Passat B2 had **2 thermoswitches** in this flange, both part of the Pierburg 2E2 carb cold-start circuit (manifold heater, choke heater, pull-down heater):
 
-| Position | Original (Passat B2) | Current (Gol G2 kit) | Function |
-|----------|---------------------|---------------------|----------|
-| Top | Thermoswitch 026 919 369 (removed) | **MTE-Thomson 4053** (marked "5k") | CLT sensor for Speeduino — NTC 5kΩ @ 25°C |
-| Bottom | Thermoswitch 026 919 369 (removed) | **MTE-Thomson 3018** (marked "5l") | Dashboard temperature gauge sender |
+| Position | Original (Passat B2) | Current | Planned (Gol G2 kit) |
+|----------|---------------------|---------|----------------------|
+| Top (M10) | Thermoswitch **035 919 369 C** (removed) | **Bosch NTC sensor** (unknown part#) → Speeduino CLT | **MTE-Thomson 4053** (marked "5k") — NTC 5kΩ @ 25°C |
+| Bottom (~M14) | Thermoswitch **026 919 369** | Still installed (original) | **MTE-Thomson 3018** (marked "5l") — dashboard gauge sender |
 
 **All temperature-related sensors on this engine:**
 
 | Location | Sensor | Function | Status |
 |----------|--------|----------|--------|
-| Coolant flange (top) | MTE-Thomson 4053 | Speeduino CLT input | ✅ Installed |
-| Coolant flange (bottom) | MTE-Thomson 3018 | Dashboard gauge sender | ⏳ To install (replaces Facet 7.3073) |
+| Coolant flange (top, M10) | Bosch NTC (unknown part#) | Speeduino CLT input | ✅ Installed — to be replaced with MTE-Thomson 4053 |
+| Coolant flange (bottom) | Original thermoswitch 026 919 369 | 2E2 carb circuit (orphaned) | ✅ Still in place — to be replaced with MTE-Thomson 3018 |
 | Back of cylinder head | Facet 7.3073 | Dashboard gauge sender (original Passat) | ✅ Currently installed — becomes redundant when 3018 installed |
 | Radiator | Fan thermoswitch | Radiator fan on/off | ✅ Installed, independent circuit |
 
-> **Gol G2 approach:** Both ECU sensor and gauge sender are in the coolant flange. No separate sender on the back of the head. This project follows the same layout.
+> **Gol G2 approach:** Both ECU sensor and gauge sender go in the coolant flange. No separate sender on the back of the head. MTE-Thomson kit (4053 + 3018) purchased, waiting to be installed.
 
 ### Intake Manifold Heater — DEAD
 
 The intake manifold has an **electric heater** (thick red wire underneath) designed to warm the manifold during cold starts, reducing fuel condensation on cold walls.
 
-- **Original circuit:** Activated by thermoswitch VW 026 919 369 in coolant flange 026.121.133.9
-- **Current status:** **DEAD** — the thermoswitch (026 919 369) was removed and replaced with the MTE-Thomson 4053 NTC sensor (different electrical behavior — NTC sensor varies resistance, thermoswitch is on/off)
+- **Original circuit:** Activated by thermoswitch **035 919 369 C** (or **026 919 369**) in coolant flange 026.121.133.9
+- **Current status:** **DEAD** — top thermoswitch (035 919 369 C) removed and replaced with Bosch NTC sensor (different electrical behavior, cannot switch the heater circuit). Bottom thermoswitch (026 919 369) still in place but circuit likely broken.
 - **Impact:** Cold manifold walls condense more fuel during warmup → higher ASE values needed than Gol G2 factory
 - **Mitigation:** ASE fix (issue 6b) compensates with extra fuel. Thermostatic air cleaner provides warm air to help atomization.
 
 ### CLT Sensor Calibration — TO VERIFY
 
-The MTE-Thomson 4053 (5kΩ @ 25°C NTC) is **not** one of the preset thermistor options in TunerStudio. The Speeduino v0.4 board has a **2490Ω bias resistor** (R10 for CLT, R11 for IAT).
+The **current CLT sensor** is an unknown Bosch NTC thermistor. A **MTE-Thomson 4053** (5kΩ @ 25°C NTC) has been purchased to replace it.
 
-**To calibrate:** TunerStudio → Tools → Calibrate Thermistor Tables → Coolant Temperature Sensor → "3 Point Therm Generator" → enter 3 known resistance-temperature points for the MTE-Thomson 4053.
+Neither sensor is one of the preset thermistor options in TunerStudio. The Speeduino v0.4 board has a **2490Ω bias resistor** (R10 for CLT, R11 for IAT).
 
-**Current status:** CLT readings appear plausible in datalogs (26°C cold matching ambient, warming to 47°C during running). Verify with a known-accurate thermometer to confirm accuracy — wrong CLT affects WUE, ASE, cranking enrichment, and all temperature-dependent corrections.
+**To calibrate:** TunerStudio → Tools → Calibrate Thermistor Tables → Coolant Temperature Sensor → "3 Point Therm Generator" → enter 3 known resistance-temperature points for the installed sensor.
+
+**Current status:** CLT readings appear plausible in datalogs (26°C cold matching ambient, warming to 47°C during running). Check which calibration is loaded in TunerStudio (may have been calibrated for the Bosch sensor). When switching to MTE-Thomson 4053, recalibrate with its datasheet values. Verify with a known-accurate thermometer — wrong CLT affects WUE, ASE, cranking enrichment, and all temperature-dependent corrections.
 
 ### New Electronic Distributor (PURCHASED - NOT YET INSTALLED)
 **Plan:** First make car run reliably with current setup → Pass IPO (inspection) → Then install electronic distributor for Speeduino ignition control.
