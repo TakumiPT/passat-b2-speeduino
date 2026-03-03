@@ -70,7 +70,7 @@
 | IAC valve | Bosch 0269980492 | 4-wire bipolar stepper, 165 steps, inverted operation |
 | MAP sensor | MPX4250AP | Onboard Speeduino |
 | CLT sensor | **Bosch NTC** (unknown part#) | In coolant flange VW 026.121.133.9 (top, M10) |
-| Gauge sender | Facet 7.3073 (back of head) | MTE-Thomson 3018 purchased, not yet installed |
+| Gauge sender | Facet 7.3073 (back of head) | MTE-Thomson 3018 (= VW 027 919 501) purchased, not yet installed |
 | Trigger | Hall sensor in distributor | "Basic Distributor" pattern |
 
 ### Injector Details
@@ -104,13 +104,13 @@ The original Passat B2 coolant flange (**VW 026.121.133.9**, right side of cylin
 
 | Position | Original | Current | Planned (Gol G2) |
 |----------|----------|---------|-------------------|
-| Top (M10) | 035 919 369 C (removed) | **Bosch NTC** (unknown part#) → Speeduino CLT | MTE-Thomson 4053 |
-| Bottom (~M14) | 026 919 369 | Still installed (original) | MTE-Thomson 3018 |
+| Top (M10) | 035 919 369 C (removed) | **Bosch NTC** (unknown part#) → Speeduino CLT | ~~MTE-Thomson 4053~~ **WON'T FIT** (M12×1.5 vs M10) — correct: **VW 026 906 161** / HELLA 6PT 009 107-561 |
+| Bottom (~M14) | 026 919 369 | Still installed (original) | MTE-Thomson 3018 (= **VW 027 919 501** / HELLA 6PT 009 309-441 / febi 01939) — fitment unverified |
 | Back of head | Facet 7.3073 | Dashboard gauge sender | Redundant when 3018 installed |
 
 > **Manifold heater:** The electric heater under the intake manifold is **dead** — the top thermoswitch (035 919 369 C) was replaced by the Bosch NTC sensor, breaking the heater circuit. Higher ASE values compensate for cold manifold fuel condensation.
 >
-> **MTE-Thomson kit (4053 + 3018):** Purchased, not yet installed. Will match the Gol G2 configuration.
+> **MTE-Thomson kit (4053 + 3018):** Purchased, not yet installed. **4053 has wrong thread** (M12×1.5 vs M10×1 on Passat B2 flange) — need VW 026 906 161 / HELLA 6PT 009 107-561 instead (~€10). 3018 is M10×1 — bottom position thread size unverified. See [.github/copilot-instructions.md](.github/copilot-instructions.md) for full OEM cross-references.
 
 ---
 
@@ -417,8 +417,9 @@ py ballast_resistor_engineering.py  # Complete resistor calculations
 - Apply ASE fix (155/151/101/30) for cold start enrichment
 - Get stable warm idle at 80°C+
 - Collect longer datalogs (5–10 min drives)
-- Verify CLT sensor calibration (MTE-Thomson 4053) with known-accurate thermometer
-- Install MTE-Thomson 3018 gauge sender in coolant flange
+- ~~MTE-Thomson 4053~~ **won't fit** (M12×1.5 vs M10 hole on Passat B2 flange) — buy correct sensor: **VW 026 906 161** / HELLA 6PT 009 107-561 / Bosch 0 280 130 026 (M10×1, ~€10)
+- Calibration values for VW 026 906 161: **25°C=2080Ω, 80°C=294Ω** (HELLA verified); **0°C=6577Ω** (CALCULATED from β=3750K — must verify with multimeter + ice water)
+- Install MTE-Thomson 3018 gauge sender in coolant flange (verify thread fitment first)
 
 ### Phase 2: Ballast Resistor
 - Install **1.8Ω / 25W wirewound** in series with injector

@@ -236,19 +236,19 @@ The original Passat B2 had **2 thermoswitches** in this flange, both part of the
 
 | Position | Original (Passat B2) | Current | Planned (Gol G2 kit) |
 |----------|---------------------|---------|----------------------|
-| Top (M10) | Thermoswitch **035 919 369 C** (removed) | **Bosch NTC sensor** (unknown part#) → Speeduino CLT | **MTE-Thomson 4053** (marked "5k") — NTC 5kΩ @ 25°C |
-| Bottom (~M14) | Thermoswitch **026 919 369** | Still installed (original) | **MTE-Thomson 3018** (marked "5l") — dashboard gauge sender |
+| Top (M10) | Thermoswitch **035 919 369 C** (removed) | **Bosch NTC sensor** (unknown part#) → Speeduino CLT | ~~MTE-Thomson 4053~~ **WON'T FIT** (M12×1.5 thread vs M10 hole) — correct sensor: **VW 026 906 161** / HELLA 6PT 009 107-561 (M10×1, 2080Ω@25°C) |
+| Bottom (~M14) | Thermoswitch **026 919 369** | Still installed (original) | **MTE-Thomson 3018** = **VW 027 919 501** / HELLA 6PT 009 309-441 / febi 01939 — dashboard gauge sender (1 pin, M10×1, NTC) — **fitment to bottom position unverified** |
 
 **All temperature-related sensors on this engine:**
 
 | Location | Sensor | Function | Status |
 |----------|--------|----------|--------|
-| Coolant flange (top, M10) | Bosch NTC (unknown part#) | Speeduino CLT input | ✅ Installed — to be replaced with MTE-Thomson 4053 |
-| Coolant flange (bottom) | Original thermoswitch 026 919 369 | 2E2 carb circuit (orphaned) | ✅ Still in place — to be replaced with MTE-Thomson 3018 |
+| Coolant flange (top, M10) | Bosch NTC (unknown part#) | Speeduino CLT input | ✅ Installed — ~~MTE-Thomson 4053 WON'T FIT~~ (M12×1.5 vs M10×1). Correct replacement: **VW 026 906 161** / HELLA 6PT 009 107-561 |
+| Coolant flange (bottom) | Original thermoswitch 026 919 369 | 2E2 carb circuit (orphaned) | ✅ Still in place — planned: **MTE-Thomson 3018** = **VW 027 919 501** / HELLA 6PT 009 309-441 (fitment unverified) |
 | Back of cylinder head | Facet 7.3073 | Dashboard gauge sender (original Passat) | ✅ Currently installed — becomes redundant when 3018 installed |
 | Radiator | Fan thermoswitch | Radiator fan on/off | ✅ Installed, independent circuit |
 
-> **Gol G2 approach:** Both ECU sensor and gauge sender go in the coolant flange. No separate sender on the back of the head. MTE-Thomson kit (4053 + 3018) purchased, waiting to be installed.
+> **Gol G2 approach:** Both ECU sensor and gauge sender go in the coolant flange. No separate sender on the back of the head. MTE-Thomson kit (4053 + 3018) purchased — but **4053 has wrong thread** (M12×1.5 vs M10×1 on Passat B2 flange). Need VW 026 906 161 / HELLA 6PT 009 107-561 / Bosch 0 280 130 026 instead (~€10). The **3018** (= VW 027 919 501 / HELLA 6PT 009 309-441 / febi 01939) is M10×1 — **bottom position thread size unverified**, may need adapter or different flange.
 
 ### Intake Manifold Heater — DEAD
 
@@ -259,15 +259,111 @@ The intake manifold has an **electric heater** (thick red wire underneath) desig
 - **Impact:** Cold manifold walls condense more fuel during warmup → higher ASE values needed than Gol G2 factory
 - **Mitigation:** ASE fix (issue 6b) compensates with extra fuel. Thermostatic air cleaner provides warm air to help atomization.
 
-### CLT Sensor Calibration — TO VERIFY
+### CLT Sensor Calibration
 
-The **current CLT sensor** is an unknown Bosch NTC thermistor. A **MTE-Thomson 4053** (5kΩ @ 25°C NTC) has been purchased to replace it.
+The **current CLT sensor** is an unknown Bosch NTC thermistor. A **MTE-Thomson 4053** (5kΩ @ 25°C NTC) was purchased to replace it, but **thread size mismatch** was discovered — see below.
 
-Neither sensor is one of the preset thermistor options in TunerStudio. The Speeduino v0.4 board has a **2490Ω bias resistor** (R10 for CLT, R11 for IAT).
+The Speeduino v0.4 board has a **2490Ω bias resistor** (R10 for CLT, R11 for IAT).
 
 **To calibrate:** TunerStudio → Tools → Calibrate Thermistor Tables → Coolant Temperature Sensor → "3 Point Therm Generator" → enter 3 known resistance-temperature points for the installed sensor.
 
-**Current status:** CLT readings appear plausible in datalogs (26°C cold matching ambient, warming to 47°C during running). Check which calibration is loaded in TunerStudio (may have been calibrated for the Bosch sensor). When switching to MTE-Thomson 4053, recalibrate with its datasheet values. Verify with a known-accurate thermometer — wrong CLT affects WUE, ASE, cranking enrichment, and all temperature-dependent corrections.
+**Current status:** CLT readings appear plausible in datalogs (26°C cold matching ambient, warming to 47°C during running). Check which calibration is loaded in TunerStudio (may have been calibrated for the Bosch sensor). Verify with a known-accurate thermometer — wrong CLT affects WUE, ASE, cranking enrichment, and all temperature-dependent corrections.
+
+#### MTE-Thomson 4053 — Thread Size Problem
+
+The MTE-Thomson 4053 has **M12×1.5 thread** (from CatE MTE-Thomson catalog: 19mm hex, M12×1.5). The Passat B2 coolant flange top position is **M10×1**. These are incompatible — the 4053 **will NOT thread into the Passat B2 coolant flange** (026.121.133.9).
+
+The MTE-Thomson catalog cross-references 4053 → VW 026906161**B** (with B suffix). The correct Passat B2 sensor is VW 026 906 161 (without B suffix, M10×1). The MTE-Thomson 4053 / VW 026906161B has M12×1.5 thread and **cannot physically thread into the Passat B2 coolant flange**.
+
+**MTE-Thomson 4053 — Full OEM Data** (from CatE MTE-Thomson catalog at catalogo.mte-thomson.com.br — MTE-Thomson's official electronic parts catalog; data extracted in previous session, site uses JavaScript SPA and cannot be re-scraped by automated tools):
+
+| Attribute | Value |
+|-----------|-------|
+| **MTE-Thomson** | **4053** |
+| **VW OE Numbers** | **026 906 161 B** (026906161B) / **026 906 161 12** (02690616112) |
+| Type | PLUG ELETRÔNICO - ÁGUA (ECU coolant temperature sensor) |
+| Thread | M12×1.5 |
+| Hex | 19mm |
+| Pins | 2 |
+| Colour | Blue (AZUL) |
+| Sensor Type | NTC, 5kΩ @ 25°C |
+| Resistance table | **NOT PUBLISHED** by MTE-Thomson or any aftermarket source |
+
+**Other OEM cross-references** (from CatE catalog, 26 numbers total):
+Alfa Romeo 46477022/60806379/60813751, Citroën/Peugeot 1338A5, FIAT 46477022/7547977/7695581, FORD V86HF12A648AA, GM/Vauxhall 93184580, Iveco 4850371, Lancia 46477022/7547977/82380901, Opel 1342850/4416020/4500001, Renault 7702087460, plus Alfa/Lancia/Fiat/Opel duplicates across brands.
+
+**Applications:** VW Gol G2 1.6 AP1600 (1994-2009), Parati, Santana, Saveiro, Polo Classic, Quantum, Van. Also used in FIAT (Elba, Fiorino, Palio, Siena, Tempra, Tipo, Uno), Ford Escort BR, Renault 19/Clio, GM Astra/Corsa/Vectra, Alfa Romeo 145/146/155/164, Citroën AX/BX/ZX, Peugeot 106/205/306/309/405, Iveco Daily, Lancia Delta/Dedra/Thema.
+
+#### MTE-Thomson 3018 — Dashboard Gauge Sender
+
+| Attribute | Value |
+|-----------|-------|
+| **MTE-Thomson** | **3018** |
+| **VW OE Numbers** | **027 919 501** / **049 919 501** / **175 919 501** (all confirmed by HELLA 6PT 009 309-441 + febi 01939 listings on Spareto + ak24parts) |
+| **HELLA Part** | **6PT 009 309-441** |
+| **febi Part** | **01939** |
+| Type | SENSOR DE TEMPERATURA - INDICADOR NO PAINEL (dashboard gauge sender) |
+| Thread | M10×1.0 |
+| Hex | 14mm (febi 01939 datasheet on Spareto + ak24parts) / 13mm (HELLA 6PT 009 309-441 datasheet on Spareto + ak24parts) — **manufacturers disagree** |
+| Pins | 1 (grounds through body) |
+| Colour | Black |
+| Sensor Type | NTC |
+| Temp Range | 0°C to +125°C |
+| Resistance table | **NOT PUBLISHED** by MTE-Thomson, HELLA, febi, or any aftermarket source |
+| Speeduino calibration | **NOT NEEDED** — connects to dashboard gauge, not ECU |
+
+**Applications:** VW Gol/Parati/Saveiro/Logus/Pointer/Quantum/Santana/Van, Ford Escort BR.
+
+> **Note:** The 3018 is a **1-pin gauge sender** (not a 2-pin ECU sensor). It connects to the dashboard temperature gauge only. It does NOT connect to the Speeduino and does NOT need TunerStudio calibration.
+
+#### VW 026 906 161 — Correct OEM CLT Sensor for Passat B2
+
+The correct CLT sensor for the M10×1 position on coolant flange 026.121.133.9 is:
+
+| Attribute | Value |
+|-----------|-------|
+| **VW OE Number** | **026 906 161** (without B suffix) |
+| **HELLA Part** | **6PT 009 107-561** |
+| **Bosch Parts** | **0 280 130 026** / **0 280 130 040** |
+| Thread | M10×1 |
+| Pins | 2 |
+| Sensor Type | NTC |
+| Colour | White |
+| Country of Origin | Brazil |
+
+**Resistance-temperature values** (from HELLA specifications, verified on Spareto + ak24parts):
+
+| Temperature | Resistance | Source |
+|-------------|-----------|--------|
+| **0°C** | **6577 Ω** | **CALCULATED** (β=3750K from the two HELLA data points — NOT from datasheet) |
+| **25°C** | **2080 Ω** | **VERIFIED** — HELLA 6PT 009 107-561 datasheet (2 independent sources) |
+| **80°C** | **294 Ω** | **VERIFIED** — HELLA 6PT 009 107-561 datasheet (2 independent sources) |
+
+**Sources:** Spareto (spareto.com/products/hella-sensor-coolant-temperature/6pt-009-107-561) and ak24parts (ak24parts.com/en/spareparts/hella-6pt-009-107-561) — both list identical specs.
+
+**TunerStudio 3-point calibration** (enter these in "3 Point Therm Generator"):
+- Point 1: **0°C** = **6577 Ω** ⚠️ CALCULATED, not from datasheet
+- Point 2: **25°C** = **2080 Ω** ✅ VERIFIED (HELLA datasheet)
+- Point 3: **80°C** = **294 Ω** ✅ VERIFIED (HELLA datasheet)
+
+**β calculation:** β = ln(2080/294) / (1/298.15 − 1/353.15) = 3750K. Then R(0°C) = 2080 × exp(3750 × (1/273.15 − 1/298.15)) = 6577Ω.
+
+> **⚠️ Only 2 of 3 calibration points are from verified datasheets.** The 0°C value is extrapolated using the Steinhart-Hart β model. While this is standard engineering practice for NTC thermistors, the actual 0°C resistance may differ. Verify with a multimeter + ice water bath after purchasing the sensor.
+
+#### Sensor Comparison — 4053 vs VW 026 906 161
+
+| | MTE-Thomson 4053 (purchased) | VW 026 906 161 / HELLA -561 (correct for Passat B2) |
+|---|---|---|
+| Resistance @ 25°C | 5000 Ω | **2080 Ω** |
+| Thread | M12×1.5 | **M10×1** ✅ fits flange |
+| Colour | Blue | White |
+| Fits Passat B2 flange (M10 hole) | **NO** ❌ | **YES** ✅ |
+| Calibration data available | No (MTE-Thomson publishes no resistance table) | **Partial** — 2 of 3 points verified (HELLA), 1 calculated |
+| Cross-references | VW 026906161**B** (Gol G2 flange) | VW 026 906 161 (Passat B2 flange) |
+
+> **Action required:** Either (1) buy the correct VW 026 906 161 / HELLA 6PT 009 107-561 / Bosch 0 280 130 026 sensor (~€10), or (2) physically verify the MTE-Thomson 4053 thread against the coolant flange before attempting installation.
+
+> **⚠️ "B" suffix matters:** VW 026 906 161 (no suffix) and VW 026 906 161 **B** are **DIFFERENT sensors** — different thread (M10 vs M12), different resistance (2080Ω vs 5000Ω @ 25°C), different colour (White vs Blue). The MTE-Thomson 4053 cross-references the **B** variant only.
 
 ### New Electronic Distributor (PURCHASED - NOT YET INSTALLED)
 **Plan:** First make car run reliably with current setup → Pass IPO (inspection) → Then install electronic distributor for Speeduino ignition control.
