@@ -69,7 +69,7 @@
 | Fuel pressure | 1.0–1.5 bar | Regulated by TBI built-in FPR |
 | IAC valve | Bosch 0269980492 | 4-wire bipolar stepper, 165 steps, inverted operation |
 | MAP sensor | MPX4250AP | Onboard Speeduino |
-| CLT sensor | **Bosch NTC** (unknown part#) | In coolant flange VW 026.121.133.9 (top, M10×1). To be replaced by **MTE-Thomson 4053** in bottom (M12×1.5) |
+| CLT sensor | **Bosch NTC** (unknown part#) | In coolant flange VW 026.121.133.9 (top, M10×1). To be replaced by **MTE-Thomson 4053** (2055Ω NTC) in bottom (M12×1.5) |
 | Gauge sender | Facet 7.3073 (back of head) | **MTE-Thomson 3018** (= VW 027 919 501) purchased — goes in top (M10×1) |
 | Trigger | Hall sensor in distributor | "Basic Distributor" pattern |
 
@@ -105,14 +105,14 @@ The original Passat B2 coolant flange (**VW 026.121.133.9**, right side of cylin
 | Position | Thread | Original | Current | Planned |
 |----------|--------|----------|---------|----------|
 | Top | M10×1 | 035 919 369 C (removed) | **Bosch NTC** (unknown part#) → Speeduino CLT | **MTE-Thomson 3018** (= VW 027 919 501) — dashboard gauge sender |
-| Bottom | M12×1.5 | 026 919 369 | Still installed (original) | **MTE-Thomson 4053** (= VW 026 906 161 B) — ECU sensor → Speeduino CLT |
+| Bottom | M12×1.5 | 026 919 369 | Still installed (original) | **MTE-Thomson 4053** (= VW 026 906 161 B / HELLA 6PT 009 309-291, 2055Ω@25°C) — ECU sensor → Speeduino CLT |
 | Back of head | — | Facet 7.3073 | Dashboard gauge sender | Redundant when 3018 installed in top |
 
 > **Fitment confirmed** (owner-tested 2026-03-03): 3018 fits top (M10×1), 4053 fits bottom (M12×1.5). Both sensors purchased — no additional purchase needed.
 >
 > **Manifold heater:** The electric heater under the intake manifold is **dead** — the top thermoswitch (035 919 369 C) was replaced by the Bosch NTC sensor, breaking the heater circuit. Higher ASE values compensate for cold manifold fuel condensation.
 >
-> **Calibration:** MTE-Thomson publishes no resistance table for the 4053. Measure resistance at 3 known temperatures with a multimeter before installation. See [.github/copilot-instructions.md](.github/copilot-instructions.md) for full OEM cross-references.
+> **Calibration:** HELLA 6PT 009 309-291 (equivalent of 4053) datasheet provides resistance values: **2055Ω @ 25°C**, **327Ω @ 80°C** (verified on Spareto + ak24parts). TunerStudio 3-point calibration: 0°C=6057Ω (calculated), 25°C=2055Ω, 80°C=327Ω. See [.github/copilot-instructions.md](.github/copilot-instructions.md) for full details.
 
 ---
 
