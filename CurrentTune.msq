@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <msq xmlns="http://www.msefi.com/:msq">
-<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="&lt;html&gt;Restore Point: User Requested Save of Settings - &#10;" writeDate="Mon Mar 02 00:44:37 GMT 2026"/>
+<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="&lt;html&gt;Restore Point: User Requested Save of Settings - &#10;" writeDate="Sun Mar 08 13:38:09 GMT 2026"/>
 <versionInfo fileFormat="5.0" firmwareInfo="Speeduino+2025.01.6" nPages="15" signature="speeduino 202501"/>
 <page>
 <pcVariable name="tsCanId">"CAN ID 0"</pcVariable>
@@ -25,14 +25,14 @@
          0.0 
       </pcVariable>
 <pcVariable cols="1" digits="0" name="wueRecommended" rows="10" units="%">
-         180.0 
-         175.0 
-         168.0 
+         195.0 
+         190.0 
+         182.0 
          154.0 
-         134.0 
-         121.0 
-         112.0 
-         106.0 
+         150.0 
+         138.0 
+         122.0 
+         110.0 
          102.0 
          100.0 
       </pcVariable>
@@ -555,9 +555,9 @@
 <constant name="rtc_mode">"Off"</constant>
 <constant name="incorporateAFR">"No"</constant>
 <constant cols="1" digits="0" name="asePct" rows="4" units="%">
-         155.0 
-         151.0 
-         101.0 
+         100.0 
+         90.0 
+         60.0 
          30.0 
       </constant>
 <constant cols="1" digits="0" name="aseCount" rows="4" units="s">
@@ -1129,9 +1129,9 @@
       </constant>
 <constant cols="1" digits="0" name="iacCrankSteps" rows="4" units="Steps">
          0.0 
+         0.0 
          54.0 
-         111.0 
-         165.0 
+         141.0 
       </constant>
 <constant cols="1" digits="0" name="iacCrankDuty" rows="4" units="Duty %">
          69.0 

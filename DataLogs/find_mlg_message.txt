@@ -1,0 +1,112 @@
+=== MESSAGES MENTIONING MLG/DATALOG (last 20MB) ===
+Total found: 129
+
+--- Match 1 (block #683, position 18582971) ---
+Read [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/ignition_table_95_RON.txt)
+
+--- Match 2 (block #684, position 18584052) ---
+Reading [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/SPEEDUINO_IGNITION_SETUP_GUIDE.txt#1-1), lines 1 to 200
+
+--- Match 3 (block #685, position 18584786) ---
+Read [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/SPEEDUINO_IGNITION_SETUP_GUIDE.txt#1-1), lines 1 to 200
+
+--- Match 4 (block #688, position 18587278) ---
+Reading [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/SPEEDUINO_IGNITION_SETUP_GUIDE.txt#200-200), lines 200 to 436
+
+--- Match 5 (block #689, position 18588026) ---
+Read [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/SPEEDUINO_IGNITION_SETUP_GUIDE.txt#200-200), lines 200 to 436
+
+--- Match 6 (block #690, position 18589202) ---
+Reading [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/DISTRIBUTOR_BASE_TIMING_FIX.txt#1-1), lines 1 to 150
+
+--- Match 7 (block #691, position 18589927) ---
+Read [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/DISTRIBUTOR_BASE_TIMING_FIX.txt#1-1), lines 1 to 150
+
+--- Match 8 (block #703, position 20287863) ---
+Reading [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/.github/copilot-instructions.md#1-1), lines 1 to 150
+
+--- Match 9 (block #704, position 20288588) ---
+Read [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/.github/copilot-instructions.md#1-1), lines 1 to 150
+
+--- Match 10 (block #705, position 20289833) ---
+Reading [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/.github/copilot-instructions.md#150-150), lines 150 to 191
+
+--- Match 11 (block #706, position 20290572) ---
+Read [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/.github/copilot-instructions.md#150-150), lines 150 to 191
+
+--- Match 12 (block #715, position 20480074) ---
+Reading [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/.github/copilot-instructions.md)
+
+--- Match 13 (block #716, position 20480740) ---
+Read [](file:///c%3A/Users/User1/Documents/TunerStudioProjects/Passat2025/DataLogs/.github/copilot-instructions.md)
+
+--- Match 14 (block #748, position 20801447) ---
+## Electronic Ignition (Speeduino) vs Mechanical Distributor
+
+### ✅ GAINS (What You Get)
+
+| Benefit | Explanation | Real-World Impact |
+|---------|-------------|-------------------|
+| **Perfect timing everywhere** | Speeduino calculates optimal timing for every RPM + load combination | +5-10% more power, +5-15% better fuel economy |
+| **Cold start timing** | Can advance timing when cold for easier starting | No more hard starts in winter |
+| **Knock protection** | Can add knock sensor later, auto-retard if knock detected | Engine protection, can run higher compression |
+| **No mechanical wear** | No springs, weights, or vacuum diaphragm to wear out | Timing stays perfect forever |
+| **Tunable** | Change timing curve in 5 minutes on laptop | Optimize for your fuel, altitude, modifications |
+| **Rev limiter** | Cut spark at redline | Engine protection |
+| **Launch control** | Retard timing for anti-lag/two-step | If you want to have fun 😄 |
+| **Data logging** | See actual timing in logs | Easy troubleshooting |
+| **No vacuum leaks** | No vacuum hose to distributor | One less thing to fail |
+| **Consistent** | Same timing every time | Smoother idle, better drivability |
+
+---
+
+### ❌ LOSSES (What You Give Up)
+
+| Downside | Explanation | How Bad Is It? |
+|----------|-------------|----------------|
+| **Complexity** | More wires, more settings | One-time setup, then forget it |
+| **Timing light needed** | Must calibrate trigger angle | €30-50 tool, use once |
+| **If Speeduino dies = no spark** | Mechanical works without computer | Rare - Speeduino is reliable |
+| **Learning curve** | Need to understand timing tables | You already learned fuel tables! |
+| **IPO inspector questions** | "What's this?" | Explain it's electronic ignition |
+
+---
+
+### 📊 Direct Comparison: Your Engine
+
+| Condition | Mechanical Distributor | Speeduino Electronic |
+|-----------|----------------------|---------------------|
+| **Cold idle (-10°C)** | ~18° (fixed by vacuum) | 22-25° (optimized for cold) |
+| **Warm idle (80°C)** | ~18° | 18° (same) |
+| **Cruise 2500 RPM, light load** | ~28-32° (vacuum + centrifugal) | 36-40° (optimized for economy) |
+| **WOT 3000 RPM** | ~28° (centrifugal only) | 26-28° (safer, no knock) |
+| **WOT 5000 RPM** | ~32° (max centrifugal) | 32-33° (matched) |
+| **High RPM 6000+** | ~32° (stays max) | 30-31° (retards for safety) |
+| **Knock detected** | Nothing (keeps advancing) | Auto-retard 5-10° |
+
+---
+
+### 🔧 Mechanical Distributor Problems You Eliminate
+
+| Problem | What Happens | With Electronic |
+|---------|--------------|-----------------|
+| **Worn springs** | Advance comes in too early/late | N/A - no springs |
+| **Worn weights** | Sloppy, inconsistent timing | N/A - no weights |
+| **Vacuum diaphragm leak** | No vacuum advance, poor economy | N/A - no diaphragm |
+| **Vacuum hose crack** | Timing varies randomly | N/A - no hose |
+| **Sticky mechanism** | Timing sticks, then jumps | N/A - instant electronic response |
+| **Distributor shaft wear** | 
+
+--- Match 15 (block #768, position 20882436) ---
+Note: The tool simplified the command to ` cd "c:\Users\User1\Documents\TunerStudioProjects\Passat2025\DataLogs" && git add .github/copilot-instructions.md && git commit -m "Add complete Speeduino ignition conversion guide with VIKA electronic distributor
+
+- Added new electronic distributor info (VIKA 99050306801, purchased)
+- Added complete ignition conversion step-by-step instructions
+- Added 95 RON ignition advance table (ready to paste)
+- Added trigger angle calibration procedure
+- Added wiring diagram and hardware requirements
+- Updated references section"`, and this is the output of running that command instead:
+[master 9ce8471] Add complete Speeduino ignition conversion guide with VIKA electronic distri
+butor                                                                                         1 file changed, 169 insertions(+), 6 deletions(-)
+
+

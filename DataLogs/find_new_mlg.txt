@@ -1,0 +1,424 @@
+=== AI MESSAGES ASKING FOR NEW DATALOG (last 50MB) ===
+Total found: 10
+
+--- Match 1 (position 25020848) ---
+You're welcome! 🙂
+
+Good luck with the Passat! Here's your next steps:
+
+1. **Start the car**
+2. **Set distributor to 18° BTDC** with timing light
+3. **Test drive** - the backfires should be gone!
+4. **Tell me the TunerStudio Advance reading** - I'll set the Trigger Angle
+
+Then you'll be ready for Speeduino ignition control whenever you want.
+
+Enjoy the drive! 🚗💨
+
+*"A strange game. The only winning move is... to tune it right."* 😄
+
+--- Match 2 (position 29017401) ---
+You're welcome! 😊
+
+Good luck with the test drive! When you get a new datalog after testing, I can analyze it to confirm everything is working correctly.
+
+**Quick recap:**
+- ✅ VE table fixed (125% at WOT/low RPM)
+- ✅ AE adjusted (40-130%)
+- ✅ AFR targets correct (12.6 at WOT)
+- ✅ No more lean backfires
+- ✅ No more stalling on WOT snap
+- ✅ Safe for the engine
+
+Enjoy the improved throttle response! 🚗💨
+
+--- Match 3 (position 29171447) ---
+You're welcome! 👍
+
+**Quick summary for your IAC stepper:**
+- Set **Stepper Power = Active** (not Always!)
+- This will prevent burning out the next stepper
+
+**And for the fuel tune:**
+- ✅ Ready to test
+- Should have good throttle response now
+- No more backfires or stalling
+
+Good luck with the test drive! Let me know how it goes or if you need help analyzing a new datalog. 🚗
+
+--- Match 4 (position 37588386) ---
+**Yes! That's the best approach.** 🎯
+
+Give me a new datalog after testing with your updated AE settings (100/150/200/250% @ 70/220/430/790, 600ms).
+
+### When Recording the Test:
+
+1. **Warm up** the engine first
+2. **Do several throttle blips** at different speeds:
+   - Slow press (Sunday driver)
+   - Medium press (normal driving)
+   - Fast press (aggressive)
+3. **Try some from low RPM** (~1000-1500 RPM) - this is where the bog happens
+4. **Record for 30-60 seconds** of throttle tests
+
+### What I'll Check:
+
+- Does AE activate? (look for enrichment %)
+- Is AFR staying rich enough during tip-in?
+- Does RPM drop/bog or climb smoothly?
+- Is the backfire gone?
+
+Just upload the new `.csv` or `.mlg` file and I'll analyze it! 📊
+
+--- Match 5 (position 37606655) ---
+ | Semicolon separated (for spreadsheets, Virtual Dyno) |
+| **JSON** | `.json` | Raw data as JSON |
+| **MSL** | `.msl` | ASCII format (TunerStudio, MegaLogViewer) |
+
+### Usage
+
+```bash
+# Convert to JSON
+npx mlg-converter --format=json your_log.mlg
+
+# Convert to multiple formats at once
+npx mlg-converter --format=csv,json,msl your_log.mlg
+
+# Multiple files
+npx mlg-converter --format=csv log1.mlg log2.mlg log3.mlg
+```
+
+### For Your New Datalog
+
+You can give me either:
+- **`.mlg`** - I can use the converter
+- **
+
+--- Match 6 (position 40289990) ---
+The user has:
+1. A new MLG datalog from today
+2. Replaced the IAC (actuador de marcha lenta / idle actuator) with a new one - part 0269980492
+3. Thinks the DRV8825 stepper driver on the Speeduino needs replacement
+4. The new IAC is fully open from new and doesn't move
+5. Idle is fully open or almost
+6. Car didn't start
+
+This is an IAC stepper motor issue. The DRV8825 is the stepper motor driver on Speeduino that controls the IAC.
+
+Let me help diagnose this:
+1. First, let's look at the new MLG to see what's happening
+2. Check if it's a wiring issue, driver issue, or configuration issue
+
+The Bosch 0269980492 is a common VW IAC stepper motor. If the motor doesn't move at all, it could be:
+- DRV8825 driver dead
+- Wiring issue
+- Wrong IAC configuration in Speeduino
+- Motor stuck/defective (but user says it's new)
+
+Let me ask to see the datalog first.
+
+--- Match 7 (position 40293711) ---
+## IAC Stepper Motor Not Working - Let's Diagnose!
+
+### The Problem:
+| Issue | Status |
+|-------|--------|
+| New IAC (0269980492) installed | ✅ |
+| IAC doesn't move | ❌ |
+| IAC stuck fully open | ❌ |
+| Car won't start | ❌ (too much air!) |
+
+---
+
+## Possible Causes:
+
+| Cause | Likelihood | Test |
+|-------|------------|------|
+| **DRV8825 dead** | HIGH | Check if motor moves at all |
+| Wiring issue | MEDIUM | Check connections |
+| Wrong Speeduino config | LOW | Verify IAC settings |
+| New IAC defective | LOW | Test motor directly |
+
+---
+
+## Let's Check the Datalog First:
+
+Can you share the new MLG file? I want to see:
+1. IAC position value (does it try to move?)
+2. RPM during crank
+3. MAP value (should be high if IAC stuck open)
+
+---
+
+## Quick DRV8825 Test:
+
+### In TunerStudio:
+1. Go to **Idle → Test IAC**
+2. Try to move the stepper (+ or -)
+3. **Listen/feel** - does motor click or move at all?
+
+| Result | Meaning |
+|--------|---------|
+| Motor moves | ✅ DRV8825 OK, check config |
+| Motor clicks but doesn't move | ⚠️ Wiring wrong or motor stuck |
+| **No sound, no movement** | ❌ **DRV8825 likely dead** |
+
+---
+
+## DRV8825 Check on Speeduino Board:
+
+### Visual Check:
+1. Look at the DRV8825 module on your Speeduino v0.4
+2. Check for:
+   - Burn marks
+   - Discoloration
+   - Smell of burnt electronics
+
+### Feel Test:
+1. Connect Speeduino to 12V
+2. Touch DRV8825 chip
+3. **Is it very hot?** → Dead/shorted
+4. Cool/warm is normal
+
+---
+
+## If DRV8825 is Dead - Replacement:
+
+### DRV8825 Module:
+- Very cheap: ~€2-5 / R$15-30
+- Easy to replace (just plug in new one)
+- Available on AliExpress, Amazon, etc.
+
+### How to Replace:
+```
+1. Power OFF Speeduino
+2. Remove old DRV8825 (pull straight up)
+3. Insert new DRV8825 (match orientation!)
+4. Set current limit (important!)
+5. Power ON and test
+```
+
+### ⚠️ CRITICAL - Current Limit Setting:
+The DRV8825 has a small potentiometer (trimpot) to set current limit.
+
+| Motor | Current Setting |
+|-------|-----------------|
+| VW IAC 0269980492 | ~0.5-0.8A |
+
+**If current too high → DRV8825 burns out!**
+
+---
+
+## While We Wait - Manual Start Test:
+
+To start the car while IAC is broken:
+
+### Option 1: Block IAC Opening
+1. Unplug IAC motor connector
+2. Manually close the IAC valve (if possible)
+3. Try to start
+4. Use throttle to control idle
+
+### Option 2: Increase Cranking Fuel
+In TunerStudio:
+- **Cranking → Cranking RPM** → Lower to 200 RPM
+- **Cranking → Prime Pulse** → Increase by 50%
+- This compensates for extra air
+
+---
+
+## Share Your MLG:
+
+Please share the new datalog so I can see:
+1. What IAC value Speeduino is commanding
+2. If the position changes during crank
+3. MAP values (confirm too much air)
+
+What do you see when you do the **IAC Test** in TunerStudio?
+
+--- Match 8 (position 40311134) ---
+## DRV8825 is DEAD - Potentiometer Broken!
+
+### The Diagnosis is Clear:
+
+| Symptom | Meaning |
+|---------|---------|
+| **Potentiometer spins freely** | ❌ Trimpot is broken inside |
+| IAC doesn't move | ❌ DRV8825 can't drive motor |
+| Was working before | DRV8825 burned out |
+
+**The DRV8825 module is dead. You need a new one.**
+
+---
+
+## Why It Died (Common Causes):
+
+| Cause | Likelihood |
+|-------|------------|
+| Current limit set too high | HIGH |
+| Motor unplugged while running | HIGH |
+| Short circuit in wiring | MEDIUM |
+| Overheating (no heatsink) | MEDIUM |
+| Defective module | LOW |
+
+---
+
+## What You Need to Buy:
+
+### Option 1: DRV8825 Module (Same as original)
+- Price: **€2-5** / **R$15-30**
+- Where: AliExpress, Amazon, electronics shops
+- Search: "DRV8825 stepper driver module"
+
+### Option 2: A4988 Module (Alternative)
+- Price: **€1-3** / **R$10-20**
+- Compatible with Speeduino
+- Slightly lower current capacity
+
+**Recommendation: Buy 2-3 modules** (they're cheap, good to have spares)
+
+---
+
+## When You Get New DRV8825:
+
+### ⚠️ CRITICAL - Set Current Limit BEFORE Installing!
+
+```
+                    ┌─────────────────┐
+                    │    DRV8825      │
+                    │                 │
+                    │   ┌───┐         │
+                    │   │POT│ ← Set this FIRST!
+                    │   └───┘         │
+                    │                 │
+                    └─────────────────┘
+```
+
+### Current Limit Formula for DRV8825:
+```
+Vref = Current_Limit × 0.5
+
+For VW IAC (~0.5A):
+Vref = 0.5 × 0.5 = 0.25V
+```
+
+### How to Set:
+1. **DON'T plug into Speeduino yet!**
+2. Connect module to 12V and GND only
+3. Measure voltage at trimpot (Vref to GND)
+4. Adjust to **0.25-0.35V** (for 0.5-0.7A)
+5. Then install in Speeduino
+
+---
+
+## Temporary Solution - Start Car Without IAC:
+
+### Option A: Plug the IAC Port
+1. Disconnect IAC electrically
+2. Block the air passage (tape/plug)
+3. Start car
+4. Control idle with throttle
+5. Car will run but idle poorly
+
+### Option B: Leave IAC Open + Adjust Tune
+1. Increase **Req_Fuel** temporarily
+2. Add more **Cranking Enrichment**
+3. Car should start but run too fast at idle
+
+---
+
+## Quick Fix Shopping List:
+
+| Item | Qty | Price |
+|------|-----|-------|
+| DRV8825 module | 2-3 | €5-10 total |
+| Small heatsink (optional) | 2-3 | €2-3 |
+
+### Where to Buy Fast (Europe/Portugal):
+- Amazon.es (2-3 days)
+- Amazon.de (2-3 days)  
+- AliExpress (7-15 days, cheapest)
+- Local electronics shop
+
+---
+
+## Summary:
+
+| Status | Action |
+|--------|--------|
+| DRV8825 | ❌ DEAD - Replace it |
+| Potentiometer | ❌ Broken internally |
+| Cost | €2-5 per module |
+| Fix time | 5 minutes (plug & play) |
+| Start car now? | Yes, with temporary workaround |
+
+**Order new DRV8825 modules and you'll be back running in a few days!**
+
+Do you want me to help you adjust the tune temporarily so you can start the car while waiting for the new DRV8825?
+
+--- Match 9 (position 40325072) ---
+The user has a new MLG file from today (2025-12-20_16.57.13.mlg) and wants me to analyze it. They've confirmed the IAC doesn't move, and they suspect the DRV8825 driver is the problem, not the IAC motor itself.
+
+Let me convert the MLG to CSV and analyze it to see what's happening with the IAC values, RPM, MAP, etc.
+
+--- Match 10 (position 42669425) ---
+## 📊 DRV8825 Output Voltages Explained
+
+### Your readings: 5V to 1V on A1, A2, B1, B2
+
+This means **the driver is working!** ✅
+
+---
+
+### What's happening:
+
+| Output | Function |
+|--------|----------|
+| A1, A2 | Coil A (one winding) |
+| B1, B2 | Coil B (other winding) |
+
+The DRV8825 energizes coils in a **pattern** to make the stepper move:
+
+```
+Step 1: A1=HIGH, A2=LOW,  B1=LOW,  B2=LOW
+Step 2: A1=LOW,  A2=LOW,  B1=HIGH, B2=LOW
+Step 3: A1=LOW,  A2=HIGH, B1=LOW,  B2=LOW
+Step 4: A1=LOW,  A2=LOW,  B1=LOW,  B2=HIGH
+(repeats)
+```
+
+---
+
+## ✅ What 5V to 1V means:
+
+| Reading | Meaning |
+|---------|---------|
+| **~5V** | Coil is energized (HIGH) |
+| **~1V** | Coil is off or PWM chopping |
+| **Varies** | Normal! Depends on current step position |
+
+---
+
+## 🎯 Quick Test:
+
+### In TunerStudio:
+1. Go to **IAC Test Mode**
+2. Command steps from **0 → 50 → 100 → 165**
+3. Watch your multimeter on A1/A2/B1/B2
+
+**You should see voltages CHANGE as you command different step positions**
+
+If voltages change when commanding → **Driver is working correctly!** ✅
+
+---
+
+## 📋 Summary:
+
+| Test | Result | Status |
+|------|--------|--------|
+| VREF voltage | 3V | ✅ OK |
+| Output voltages | 1-5V | ✅ Driver working |
+| **Next step** | **Connect IAC motor & test** | 🔜 |
+
+**Your driver looks good! Ready to connect the IAC motor.** 👍
+

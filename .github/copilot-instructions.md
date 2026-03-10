@@ -29,7 +29,10 @@ This is a **Speeduino ECU tuning project** for a 1984 VW Passat B2 with a 1.6L D
 - **Fuel Pump:** 3 bar (electric, in-tank or inline)
 - **Fuel Pressure at TBI:** 1.0-1.5 bar (regulated by fuel pressure regulator built into the TBI unit)
 - **Injector Driver:** Direct drive — NO ballast resistor, NO peak-and-hold module (as of 2026-02-28 datalogs)
+- **O2 Sensor:** Wideband (DIY-EFI TinyWB Rev1 controller + Bosch LSU 4.9), egoType="Wide Band" in TunerStudio
+- **O2 Sensor Connector:** Bosch JPT 6-pin (LSU 4.9 standard connector)
 - **ECU:** Speeduino v0.4.4c SMD (assembled, from diy-efi.co.uk, £155), firmware 2025.01.6
+- **Key Switch:** Old VW style — only ON and START positions (no separate ACC)
 
 ### Injector Sizing — CRITICAL NOTE
 
@@ -533,7 +536,7 @@ If you hear metallic pinging/rattling under load:
 
 ### IAC Configuration (CORRECT VALUES)
 ```
-iacAlgorithm: None (IAC physically disconnected — butterfly screw handles idle air)
+iacAlgorithm: Stepper Open Loop (changed from "None" on 2026-03-07)
 iacStepHome: 165 steps (home position = fully closed)
 iacMaxSteps: 162 steps (safe software limit)
 iacCLminValue: 0 steps (full range for closed loop)
@@ -544,7 +547,8 @@ iacStepperInv: No (tables are inverted instead)
 ```
 
 > ✅ **FIXED (2026-02-28):** `iacCLmaxValue` changed from 54 → 162.
-> IAC algorithm set to "None" because IAC valve is physically disconnected. Butterfly bypass screw handles all idle air.
+> ✅ **CHANGED (2026-03-07):** iacAlgorithm changed from "None" → "Stepper Open Loop".
+> IAC valve is physically disconnected. Butterfly bypass screw handles all idle air. Open loop is configured and ready for when IAC is connected.
 
 ### IAC Tables Philosophy
 Since the throttle body has a **butterfly bypass screw** that provides base idle air:
@@ -681,6 +685,48 @@ npx mlg-converter --format=csv 2025-12-20_16.57.13.mlg
 - **Correct value:** 1.8Ω / 25W wirewound ceramic (I_crank=2.24A, +12% margin). Only 1.8Ω and 2.2Ω satisfy all constraints.
 - **Reference files:** DataLogs/ballast_resistor_engineering.py, DataLogs/analyze_mar1_performance.py
 
+### 12. IAC Cranking Table — FIXED (2026-03-07)
+- **Problem:** Cranking steps table was BACKWARDS — cranking steps were more closed than running steps at the same temperature, causing idle surge/hang after start
+- **Analysis:** iac_volumetric_check.py — volumetric flow analysis showed cranking table direction was opposite to running OL table
+- **Old values:** iacCrankSteps = 0 / 54 / 111 / 165 at bins -21 / 0 / 37 / 65°C
+- **Fix:** iacCrankSteps = **0 / 0 / 54 / 141** at same bins
+- **Logic:** Cold engine needs valve MORE open (lower step values) during cranking, not less
+
+### 13. O2 Sensor Wiring — DIAGNOSED (2026-03-07/08)
+- **Problem:** AFR pegged at 19.7 (sensor dead) — intermittent failure pattern
+- **Root cause:** TinyWB heater 1A return current through thin Speeduino proto area GND trace (~0.2Ω) shifts signal voltage by ~1.5V → AFR reads 19.7 (max). Also: DB9 serial cable (~28AWG) used as sensor cable has loose/intermittent connections.
+- **AFR History:**
+  - Nov 19 - Dec 11, 2025: WORKING (95-100% normal readings)
+  - Dec 20, 2025: DEAD (91.7% pegged at 19.7)
+  - Feb 28, 2026: WORKING AGAIN (99-100% normal)
+  - Mar 1: Slightly degraded (91% normal)
+  - Mar 5-7: DEAD (97% pegged)
+  - Mar 8: Partially working after rewiring (45% pegged, 45% normal) — intermittent connection
+- **Fix in progress:** Replace DB9 cable with proper LSU 4.9 Bosch JPT 6-pin connector + 18 AWG wiring. Connect heater 12V to fuel pump relay output (safe — no thermal shock from 3s prime gap). GND to Speeduino screw terminal.
+- **Reference files:** DataLogs/afr_history.py, DataLogs/analyze_mar8_wiring_test.py
+
+### 14. Alternator Not Charging — ONGOING (2026-03-07)
+- **Problem:** Battery voltage only 12.8V while running (alternator not charging)
+- **Alternator:** SKGN-0320054, 65A
+- **Mar 5:** 10.7V running (belt slipping badly)
+- **Mar 7:** 12.8V avg, 13.1V max (belt fixed but still not charging properly)
+- **Mar 8:** With LSU disconnected, voltage reached 14V — suggesting electrical load/wiring issue
+- **Status:** Needs further investigation — check brushes, voltage regulator, and wiring
+
+### 15. VE Table Low RPM Under Load — IDENTIFIED (2026-03-08)
+- **Problem:** Engine bogs/stalls when releasing clutch at green lights. Feels like no power at clutch engagement point ("ponto de embraiagem"). Need 2000+ RPM to avoid stalling in 1st gear.
+- **Cause:** VE table at 500-900 RPM / 76-100 kPa only gives 50-57% — too lean under load at low RPM.
+- **Contributing factors:**
+  - No IAC working → no dashpot function → no extra air during load transients
+  - Butterfly screw provides fixed idle air only → can't compensate for sudden load
+  - Original Pierburg 2E2 carb had accelerator pump + idle progression circuit that naturally enriched during clutch engagement
+- **Fix needed:** Increase VE values at low RPM / high MAP (need O2 sensor working first for proper calibration). Temporary fix: open butterfly screw ¼ turn or open unused vacuum plug slightly.
+
+### 16. Shifter Bushings — FIXED (2026-03-08)
+- **Problem:** Could only select 3rd gear — shift rod bushings completely worn after 40+ years
+- **Fix:** Replaced bushings — all gears now selectable, needs fine tuning
+- **Parts:** Shift rod end bushing (VW 171 711 595A or equivalent), shift lever ball cup (VW 191 711 067)
+
 ### 9. DFCO (Deceleration Fuel Cut-Off) — MUST STAY OFF
 - **Problem:** DFCO is dangerous with mechanical distributor
 - **Reason:** On deceleration, manifold vacuum reaches ~20-25 kPa → mechanical distributor advances timing to 35-40° BTDC. When DFCO restores fuel after the cut period, combustion occurs with extreme advance + lean mixture = **intake backfire risk**.
@@ -700,6 +746,11 @@ npx mlg-converter --format=csv 2025-12-20_16.57.13.mlg
 8. **USE THE POSITION WITH HIGHER VOLTAGE**
 
 **Note:** Clone modules vary. Don't expect specific voltage values - just use higher reading.
+
+### Current Board Status
+- **DRV8825 history:** First module was **dead** (outputting 12V on all coil pins = passing VMOT through). Replaced with new module — outputs 1-5V = correct.
+- **VREF potentiometer:** Set to **3V** (the higher of the two limit positions: 2V and 3V)
+- **Module type:** Clone (not genuine TI)
 
 ### Correct Outputs
 | Pin | Working Voltage | Dead Driver |
@@ -749,6 +800,95 @@ npx mlg-converter --format=csv $(ls -t *.mlg | head -1)
 9. **Don't set hardRevLim above 6200 RPM** - Hydraulic lifters, 40-year-old springs, DT cam makes no power above 5500. If engine rebuilt with new springs: 6500 max.
 10. **Don't remove the thermostatic air cleaner** - TBI injects above throttle plate; warm intake air helps fuel atomization through manifold, especially during cold starts.
 11. **Don't assume the injector driver is a bare MOSFET** - It's a VNLD5090-E smart low-side driver rated for 13A with built-in protections. 7A from the injector is 54% of its rating — SAFE. The concern is injector longevity, not Speeduino board damage.
+12. **Don't route O2 heater current through Speeduino proto area GND** - The thin proto traces (~0.2Ω) can't handle the 1A heater return. This causes a voltage offset on the signal, making AFR read 19.7 (max). Use the screw terminal GND for heater return.
+13. **Don't use DB9/serial cable for O2 sensor wiring** - Too thin (~28 AWG), pins corrode and lose contact, causes intermittent sensor failures. Use proper LSU 4.9 JPT connector with 18 AWG wiring.
+14. **Don't connect TinyWB heater 12V to a source that cycles off during running** - Use fuel pump relay output (continuous while running) or ignition-switched power. The 3-second fuel pump prime gap does NOT cause thermal shock (sensor barely warm in 3s).
+15. **Don't blindly increase VE at low RPM / high MAP** - The 500-900 RPM / 76-100 kPa zone needs correction (currently 50-57%, too lean), but wait for working O2 sensor data to calibrate correctly.
+
+## O2 Sensor Wiring (TinyWB + LSU 4.9)
+
+### TinyWB DIY-EFI Rev1 Pinout
+
+**Left side (ECU connections):**
+| Pin | Signal | Connect to |
+|-----|--------|------------|
+| 5V | Logic power | Speeduino 5V (proto area) |
+| LIN | AFR signal (0-5V) | Speeduino O2 input (proto area) |
+| TX | Serial (unused) | — |
+| GND | Power & signal ground | Speeduino GND screw terminal |
+
+**Right side (to LSU 4.9 via JPT 6-pin connector):**
+| TinyWB Pin | JPT Pin | Color | Signal | Wire Gauge |
+|------------|---------|-------|--------|------------|
+| VM | 2 | Yellow | Virtual ground | 20 AWG |
+| H- | 3 | White | Heater – (ground return, HIGH current) | 18 AWG |
+| UN | 6 | Black | Nernst cell – | 20 AWG |
+| IP | 1 | Red | Nernst cell + | 20 AWG |
+| H+12V | 4 | Gray | Heater + (12V PWM) | 18 AWG |
+| IA | 5 | Light Blue | Pump current – | 20 AWG |
+
+### Power Connections
+- **Heater 12V (H+):** Connect to **fuel pump relay output** (ignition-switched, turns off when key OFF, safe 3s prime gap doesn't cause thermal shock)
+- **Heater GND (H-):** Returns through TinyWB board → GND pin → **Speeduino GND screw terminal**
+- **Logic 5V:** Speeduino 5V proto area (low current, fine on thin traces)
+- **Signal (LIN):** Speeduino O2 input proto area (low current, fine on thin traces)
+- **Fuse:** 2A inline on heater 12V line
+
+### LSU 4.9 Connector
+- **Type:** Bosch JPT (Junior Power Timer) 6-pin
+- **Bosch PN:** 1 928 404 617
+- **VW equivalent:** 1J0 973 713
+- **AliExpress search:** "LSU 4.9 connector" or "Bosch lambda sensor connector 6 pin"
+
+### TinyWB Calibration
+- 1.0V = AFR 9.7
+- 4.0V = AFR 18.7
+
+## ECU Enclosure & Connector Plan
+
+### Current Setup
+- Speeduino v0.4.4c on Arduino Mega — exposed board with screw terminals
+- DB25 female connector on aluminum project box (too few pins, not sealed, wrong wire gauge)
+
+### Planned Upgrade
+- **Enclosure:** Hammond 1590D (153×82×50mm internal) or similar aluminum box
+- **Connector:** TE Ampseal 35-pin (776164-1 receptacle, 776231-1 plug)
+- **Wire gauge:** Mostly 18 AWG, 16 AWG for main power/ground only
+- **Panel mount:** Connector flanges from inside, 2× M3 screws, rectangular cutout 38.1×19.1mm
+
+### Ampseal 35 Pin Assignment (Planned)
+| Function | Pins | Wire Gauge |
+|----------|------|------------|
+| Main 12V supply × 2 | 2 | 16 AWG |
+| Main ground × 2 | 2 | 16 AWG |
+| Injector signal | 1 | 18 AWG |
+| Injector 12V | 1 | 16 AWG |
+| Fuel pump relay | 1 | 18 AWG |
+| IAC stepper (A1/A2/B1/B2) | 4 | 18 AWG |
+| CLT signal + GND | 2 | 18 AWG |
+| IAT signal + GND | 2 | 18 AWG |
+| TPS signal + 5V + GND | 3 | 18 AWG |
+| Trigger (Hall) signal + 5V + GND | 3 | 18 AWG |
+| O2 signal | 1 | 18 AWG |
+| O2 heater 12V + GND | 2 | 18 AWG |
+| Tacho output | 1 | 18 AWG |
+| Fan relay | 1 | 18 AWG |
+| Ignition output (future) | 1 | 18 AWG |
+| Spare | 8 | — |
+| **Total** | **35** | |
+
+### Where to Buy (Portugal)
+- **Mouser:** mouser.pt — 571-776164-1 (receptacle), 571-776231-1 (plug), 571-770680-1 (crimp pins)
+- **TME:** tme.eu/pt — Search "Ampseal 776164"
+- **AliExpress:** Search "Ampseal 35 pin connector kit" (cheapest, 2-3 weeks)
+
+## User & Environment
+
+- **Language:** Portuguese (car is in Portugal)
+- **TunerStudio version:** MegaSquirt (MS) 3.3.01
+- **Node.js:** v24.13.0 (available in PATH)
+- **Python:** 3.14 — installed at `C:\Users\User1\AppData\Local\Programs\Python\Python314` but **NOT in system PATH**. Use full path or `python3` alias.
+- **MLG conversion:** `npx mlg-converter --format=csv <file>.mlg`
 
 ## Useful References
 
