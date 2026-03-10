@@ -848,7 +848,9 @@ npx mlg-converter --format=csv $(ls -t *.mlg | head -1)
 
 ### Current Setup
 - Speeduino v0.4.4c on Arduino Mega — exposed board with screw terminals
-- DB25 female connector on aluminum project box (too few pins, not sealed, wrong wire gauge)
+- DB27 female connector on aluminum project box (too few pins, not sealed, wrong wire gauge)
+- **Wiring reference:** `Speeduino Passat.xlsx` — contains full DB27 pin mapping, wire colors, stepper pin cross-reference, and sensor resistance tables
+  - ⚠️ The "Tiny WB Pins" sheet has WRONG signal names (UN≠"Unregulated 12V", IP≠"Ignition Power", IA≠"Ignition Analog Output", VM≠"Voltage Monitor") — see O2 Sensor Wiring section for correct pinout
 
 ### Planned Upgrade
 - **Enclosure:** Hammond 1590D (153×82×50mm internal) or similar aluminum box
