@@ -859,25 +859,57 @@ npx mlg-converter --format=csv $(ls -t *.mlg | head -1)
 - **Panel mount:** Connector flanges from inside, 2× M3 screws, rectangular cutout 38.1×19.1mm
 
 ### Ampseal 35 Pin Assignment (Planned)
-| Function | Pins | Wire Gauge |
-|----------|------|------------|
-| Main 12V supply × 2 | 2 | 16 AWG |
-| Main ground × 2 | 2 | 16 AWG |
-| Injector signal | 1 | 18 AWG |
-| Injector 12V | 1 | 16 AWG |
-| Fuel pump relay | 1 | 18 AWG |
-| IAC stepper (A1/A2/B1/B2) | 4 | 18 AWG |
-| CLT signal + GND | 2 | 18 AWG |
-| IAT signal + GND | 2 | 18 AWG |
-| TPS signal + 5V + GND | 3 | 18 AWG |
-| Trigger (Hall) signal + 5V + GND | 3 | 18 AWG |
-| O2 signal | 1 | 18 AWG |
-| O2 heater 12V + GND | 2 | 18 AWG |
-| Tacho output | 1 | 18 AWG |
-| Fan relay | 1 | 18 AWG |
-| Ignition output (future) | 1 | 18 AWG |
-| Spare | 8 | — |
-| **Total** | **35** | |
+
+Designed with future scalability: ignition control (VIKA distributor), MPI conversion, turbo, launch control.
+
+| T35 | Group | Function | Speeduino Pin | Old DB27 | AWG | Status |
+|-----|-------|----------|---------------|----------|-----|--------|
+| 1 | POWER | Main 12V #1 (ign-switched) | — | 13 | 16 | CURRENT |
+| 2 | POWER | Main 12V #2 (ign-switched) | — | — | 16 | CURRENT |
+| 3 | POWER | Main GND #1 | 9,10 | 4,16 | 16 | CURRENT |
+| 4 | POWER | Main GND #2 | 12 | 17 | 16 | CURRENT |
+| 5 | POWER | Injector 12V rail | — | — | 16 | CURRENT |
+| 6 | POWER | O2 Heater 12V in | — | — | 18 | CURRENT |
+| 7 | INJ | INJ1 signal | 1 | 1 | 18 | CURRENT |
+| 8 | INJ | INJ2 signal | 2 | — | 18 | FUTURE MPI |
+| 9 | INJ | INJ3 signal | 3 | — | 18 | FUTURE MPI |
+| 10 | INJ | INJ4 signal | 5 | — | 18 | FUTURE MPI |
+| 11 | IGN | IGN1 output | 7 | — | 18 | FUTURE IGN |
+| 12 | IAC | Stepper 1A | 31 | 23 | 18 | CURRENT |
+| 13 | IAC | Stepper 1B | 32 | 24 | 18 | CURRENT |
+| 14 | IAC | Stepper 2A | 30 | 12 | 18 | CURRENT |
+| 15 | IAC | Stepper 2B | 29 | 11 | 18 | CURRENT |
+| 16 | SENSOR | CLT signal | 19 | 19 | 20 | CURRENT |
+| 17 | SENSOR | IAT signal | 20 | 7 | 20 | CURRENT |
+| 18 | SENSOR | TPS signal | 22 | 8 | 20 | CURRENT |
+| 19 | SENSOR | Sensor 5V | 13,28 | 5,10 | 20 | CURRENT |
+| 20 | SENSOR | Sensor GND | 23 | 21 | 20 | CURRENT |
+| 21 | TRIGGER | Trigger signal (Hall) | 25 | 22 | 20 | CURRENT |
+| 22 | TRIGGER | Trigger 5V | 28 | 10 | 20 | CURRENT |
+| 23 | TRIGGER | Trigger GND | 23 | 21 | 20 | CURRENT |
+| 24 | LSU | LSU IP (Nernst+, JPT 1) | TinyWB IP | — | 20 | CURRENT |
+| 25 | LSU | LSU VM (Virtual GND, JPT 2) | TinyWB VM | — | 20 | CURRENT |
+| 26 | LSU | LSU H- (Heater return, JPT 3) | TinyWB H- | — | 18 | CURRENT |
+| 27 | LSU | LSU H+ (Heater PWM, JPT 4) | TinyWB H+ | — | 18 | CURRENT |
+| 28 | LSU | LSU IA (Pump current-, JPT 5) | TinyWB IA | — | 20 | CURRENT |
+| 29 | LSU | LSU UN (Nernst-, JPT 6) | TinyWB UN | — | 20 | CURRENT |
+| 30 | OUTPUT | Fuel pump relay drive | 16 | 6 | 18 | CURRENT |
+| 31 | OUTPUT | Fan relay drive | 15 | 18 | 18 | CURRENT |
+| 32 | OUTPUT | Tacho output | 17 | — | 18 | FUTURE |
+| 33 | OUTPUT | Boost solenoid | 35 | — | 18 | FUTURE TURBO |
+| 34 | INPUT | Clutch switch | 18 | — | 18 | FUTURE |
+| 35 | SPARE | Spare / Flex fuel | 14 | — | 18 | SPARE |
+
+**Pin count by group:** POWER 6 + INJ 4 + IGN 1 + IAC 4 + SENSOR 5 + TRIGGER 3 + LSU 6 + OUTPUT 3 + FUTURE 2 + SPARE 1 = **35**
+
+**Scalability notes:**
+- **MPI conversion:** Wire INJ2-4 (T35 pins 8-10) to new injectors. Change TunerStudio to "Semi-Sequential" or "Sequential" injection mode. INJ 12V rail (pin 5) splits to all 4 injectors on engine side.
+- **Ignition control:** Wire IGN1 (T35 pin 11) to Bosch Module 124 input. Install VIKA 99050306801 distributor (no mechanical advance). Enable Speeduino ignition in TunerStudio.
+- **Turbo:** Wire boost solenoid (T35 pin 33) to wastegate actuator or boost control valve. MAP sensor is onboard Speeduino (no extra pin needed). Tune boost table in TunerStudio.
+- **Launch control:** Wire clutch switch (T35 pin 34) to normally-open switch on clutch pedal. Configure launch control RPM limit in TunerStudio. Also useful for anti-stall (increase idle when clutch pressed in gear).
+- **Flex fuel (E85):** Wire flex fuel sensor (T35 pin 35) to GM-style flex sensor. Proto Area 1 input on Speeduino.
+
+**Full pinout with wire colors in `Speeduino Passat.xlsx` → "Ampseal T35" sheet**
 
 ### Where to Buy (Portugal)
 - **Mouser:** mouser.pt — 571-776164-1 (receptacle), 571-776231-1 (plug), 571-770680-1 (crimp pins)
