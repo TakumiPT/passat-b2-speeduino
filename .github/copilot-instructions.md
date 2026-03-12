@@ -28,7 +28,7 @@ This is a **Speeduino ECU tuning project** for a 1984 VW Passat B2 with a 1.6L D
 - **Original SPI Applications:** VW Gol/Parati/Saveiro/Logus/Pointer/Quantum/Pampa, Fiat Elba/Prêmio/Palio/Fiorino, Ford Escort, Renault 19 (Brazilian market SPI systems, 1994-1999)
 - **Fuel Pump:** 3 bar (electric, in-tank or inline)
 - **Fuel Pressure at TBI:** 1.0-1.5 bar (regulated by fuel pressure regulator built into the TBI unit)
-- **Injector Driver:** Direct drive — NO ballast resistor, NO peak-and-hold module (as of 2026-02-28 datalogs)
+- **Injector Driver:** Direct drive — 1.8Ω 25W ballast resistor arrived 2026-03-12, pending installation
 - **O2 Sensor:** Wideband (DIY-EFI TinyWB Rev1 controller + Bosch LSU 4.9), egoType="Wide Band" in TunerStudio
 - **O2 Sensor Connector:** Bosch JPT 6-pin (LSU 4.9 standard connector)
 - **ECU:** Speeduino v0.4.4c SMD (assembled, from diy-efi.co.uk, £155), firmware 2025.01.6
@@ -164,10 +164,26 @@ VNLD5090 output → 1N4448WX diode → INJ-x-OUT terminal
 - Decoupling: 0.1µF + 1µF per driver IC
 - **Not used** on this car (ignition still mechanical distributor)
 
+#### Tacho Output (Proto Area 4)
+- **Pin:** Speeduino pin 17 → SSM3K357R MOSFET → tacho output terminal
+- **JP2 Jumper:** Selects tacho output voltage — **5V** or **12V**
+- **Set JP2 = 12V** for the old VW Passat B2 instrument cluster tachometer (reads from coil terminal 1 / Klemme 1)
+- Direct wire from Speeduino tacho output to cluster — no relay, no transistor needed
+
+**TunerStudio Tacho Settings:**
+```
+tachoPin: Board Default
+tachoDiv: Half          (4-cylinder = 2 pulses per revolution)
+tachoDuration: 3 ms     (fixed pulse width for old analog tach)
+tachoMode: Fixed Duration (NOT "Match Dwell" — Speeduino doesn't control ignition yet)
+useTachoSweep: Off      (set On for startup needle sweep — cosmetic)
+tachoSweepMaxRPM: 6200  (match hardRevLim)
+```
+
 #### Other Components
 | Ref | Part | Function |
 |-----|------|----------|
-| Q1, Q2, Q3 | SSM3K357R (SOT-23) | Small N-ch MOSFETs for auxiliary outputs |
+| Q1, Q2, Q3 | SSM3K357R (SOT-23) | Small N-ch MOSFETs for auxiliary outputs (fuel pump relay, fan relay, tacho). Drive relay coils (~150mA) only — NOT direct motor/pump loads (rated ~3A but SOT-23 thermal limit ~200-500mA continuous) |
 | U5 | MPX4250AP | Onboard MAP sensor |
 | U6 | SP720ABTG | ESD protection |
 | U8 | LM2940S-5.0 | 5V voltage regulator |
@@ -678,11 +694,13 @@ npx mlg-converter --format=csv 2025-12-20_16.57.13.mlg
 - **Resolution:** Engine ran fine at CLT 46-47°C with original WUE values (138/122) — the VE valley does not cause a real-world problem. No WUE compensation needed, no VE change needed.
 - **Status:** Closed. Monitor if idle RPM target changes significantly.
 
-### 11. Ballast Resistor Test — 3.3Ω PROVEN TOO HIGH (2026-03-01)
-- **Problem:** 3.3Ω wirewound resistor tested on 2026-03-01 — engine did NOT start
-- **Analysis:** 2026-03-01_19.08.45.mlg — 1092 samples, 115 cranking, 0 running. Peak RPM 262. AFR rising 16.3→19.7 (residual fuel evaporating, zero injection).
-- **Root cause:** I = V/R = 9.2V / 5.3Ω = 1.74A < 2.0A pull-in threshold. Minimum voltage to open injector with 3.3Ω: 10.6V — 0 of 115 cranking samples reached this voltage.
-- **Correct value:** 1.8Ω / 25W wirewound ceramic (I_crank=2.24A, +12% margin). Only 1.8Ω and 2.2Ω satisfy all constraints.
+### 11. Ballast Resistor — 3.3Ω FAILED, 1.8Ω ARRIVED (2026-03-12)
+- **3.3Ω test (2026-03-01):** Engine did NOT start. 2026-03-01_19.08.45.mlg — 1092 samples, 115 cranking, 0 running. Peak RPM 262. I = 9.2V / 5.3Ω = 1.74A < 2.0A pull-in threshold.
+- **1.8Ω 25W wirewound ceramic resistor:** Arrived 2026-03-12. Pending installation.
+- **Expected performance with 1.8Ω:** I_crank = 9.2V / 3.8Ω = 2.42A (+21% margin over 2.0A pull-in). I_running = 14.4V / 3.8Ω = 3.79A.
+- **Installation:** Wire in series with injector signal (between Speeduino INJ1 output and injector). Mount on metal bracket with airflow (gets warm under load).
+- **Tune change:** `injOpen` from 1.0ms → **1.1ms** (lower current = slower opening).
+- **Precaution:** Charge battery fully before testing (alternator marginal at 12.8V). If battery cranking voltage drops below 7.6V, even 1.8Ω won't open injector.
 - **Reference files:** DataLogs/ballast_resistor_engineering.py, DataLogs/analyze_mar1_performance.py
 
 ### 12. IAC Cranking Table — FIXED (2026-03-07)
@@ -855,8 +873,29 @@ npx mlg-converter --format=csv $(ls -t *.mlg | head -1)
 ### Planned Upgrade
 - **Enclosure:** Hammond 1590D (153×82×50mm internal) or similar aluminum box
 - **Connector:** TE Ampseal 35-pin (776164-1 receptacle, 776231-1 plug)
-- **Wire gauge:** Mostly 18 AWG, 16 AWG for main power/ground only
+- **Wire gauge:** All existing wires are 18 AWG — keep as-is. Only new dedicated injector 12V rail needs adding.
 - **Panel mount:** Connector flanges from inside, 2× M3 screws, rectangular cutout 38.1×19.1mm
+
+### Relay & Fuse Layout
+```
+BATTERY (+) ──→ ECU/INJ RELAY (coil: ign switch) ──→ FUSE ──→ ECU + Injector 12V
+BATTERY (+) ──→ FUEL PUMP RELAY (coil: Speeduino GND-switch) ──→ FUSE ──→ Pump
+                                                                      └→ 2A fuse ──→ O2 Heater
+```
+- **VW standard order:** Battery → Relay → Fuse → Load
+- Fuel pump relay is ground-switched by Speeduino pin 16 (3s prime on power-up, then ON while running)
+- O2 heater 12V taps from fuel pump relay output → **2A inline fuse** → TinyWB H+12V (protects TinyWB if LSU heater shorts)
+
+**Why relays are REQUIRED for pump and fan:**
+Speeduino outputs (pins 15, 16) use SSM3K357R MOSFETs in tiny SOT-23 packages. These switch **relay coils** (~150mA) to ground — they cannot drive motors directly.
+
+| Load | Current Draw | SSM3K357R Capacity | Direct Drive? |
+|------|-------------|-------------------|---------------|
+| Relay coil | ~150-200 mA | ~3A (SOT-23 thermal limit ~500mA) | ✅ Fine |
+| Fuel pump | 5-8 A | ~3A rating | ❌ Burns MOSFET |
+| Radiator fan | 15-30 A | ~3A rating | ❌ Destroys MOSFET |
+
+**Fan note:** The radiator already has an independent fan thermoswitch. Speeduino fan output (pin 15 / T35 pin 30) is optional — only needed for programmable fan control (e.g., turn on at a specific CLT or with A/C).
 
 ### Ampseal 35 Pin Assignment (Planned)
 
@@ -864,50 +903,55 @@ Designed with future scalability: ignition control (VIKA distributor), MPI conve
 
 | T35 | Group | Function | Speeduino Pin | Old DB27 | AWG | Status |
 |-----|-------|----------|---------------|----------|-----|--------|
-| 1 | POWER | Main 12V #1 (ign-switched) | — | 13 | 16 | CURRENT |
-| 2 | POWER | Main 12V #2 (ign-switched) | — | — | 16 | CURRENT |
-| 3 | POWER | Main GND #1 | 9,10 | 4,16 | 16 | CURRENT |
-| 4 | POWER | Main GND #2 | 12 | 17 | 16 | CURRENT |
-| 5 | POWER | Injector 12V rail | — | — | 16 | CURRENT |
-| 6 | POWER | O2 Heater 12V in | — | — | 18 | CURRENT |
-| 7 | INJ | INJ1 signal | 1 | 1 | 18 | CURRENT |
-| 8 | INJ | INJ2 signal | 2 | — | 18 | FUTURE MPI |
-| 9 | INJ | INJ3 signal | 3 | — | 18 | FUTURE MPI |
-| 10 | INJ | INJ4 signal | 5 | — | 18 | FUTURE MPI |
-| 11 | IGN | IGN1 output | 7 | — | 18 | FUTURE IGN |
-| 12 | IAC | Stepper 1A | 31 | 23 | 18 | CURRENT |
-| 13 | IAC | Stepper 1B | 32 | 24 | 18 | CURRENT |
-| 14 | IAC | Stepper 2A | 30 | 12 | 18 | CURRENT |
-| 15 | IAC | Stepper 2B | 29 | 11 | 18 | CURRENT |
-| 16 | SENSOR | CLT signal | 19 | 19 | 20 | CURRENT |
-| 17 | SENSOR | IAT signal | 20 | 7 | 20 | CURRENT |
-| 18 | SENSOR | TPS signal | 22 | 8 | 20 | CURRENT |
-| 19 | SENSOR | Sensor 5V | 13,28 | 5,10 | 20 | CURRENT |
-| 20 | SENSOR | Sensor GND | 23 | 21 | 20 | CURRENT |
-| 21 | TRIGGER | Trigger signal (Hall) | 25 | 22 | 20 | CURRENT |
-| 22 | TRIGGER | Trigger 5V | 28 | 10 | 20 | CURRENT |
-| 23 | TRIGGER | Trigger GND | 23 | 21 | 20 | CURRENT |
-| 24 | LSU | LSU IP (Nernst+, JPT 1) | TinyWB IP | — | 20 | CURRENT |
-| 25 | LSU | LSU VM (Virtual GND, JPT 2) | TinyWB VM | — | 20 | CURRENT |
-| 26 | LSU | LSU H- (Heater return, JPT 3) | TinyWB H- | — | 18 | CURRENT |
-| 27 | LSU | LSU H+ (Heater PWM, JPT 4) | TinyWB H+ | — | 18 | CURRENT |
-| 28 | LSU | LSU IA (Pump current-, JPT 5) | TinyWB IA | — | 20 | CURRENT |
-| 29 | LSU | LSU UN (Nernst-, JPT 6) | TinyWB UN | — | 20 | CURRENT |
-| 30 | OUTPUT | Fuel pump relay drive | 16 | 6 | 18 | CURRENT |
-| 31 | OUTPUT | Fan relay drive | 15 | 18 | 18 | CURRENT |
-| 32 | OUTPUT | Tacho output | 17 | — | 18 | FUTURE |
-| 33 | OUTPUT | Boost solenoid | 35 | — | 18 | FUTURE TURBO |
-| 34 | INPUT | Clutch switch | 18 | — | 18 | FUTURE |
-| 35 | SPARE | Spare / Flex fuel | 14 | — | 18 | SPARE |
+| 1 | POWER | Main 12V (ign-switched) | — | 13 | 18 | CURRENT |
+| 2 | POWER | Main GND #1 | 9,10 | 4,16 | 18 | CURRENT |
+| 3 | POWER | Main GND #2 | 12 | 17 | 18 | CURRENT |
+| 4 | POWER | Injector 12V rail | — | — | 18 | CURRENT 🆕 |
+| 5 | POWER | O2 Heater 12V in | — | — | 18 | CURRENT |
+| 6 | INJ | INJ1 signal | 1 | 1 | 18 | CURRENT |
+| 7 | INJ | INJ2 signal | 2 | — | 18 | FUTURE MPI |
+| 8 | INJ | INJ3 signal | 3 | — | 18 | FUTURE MPI |
+| 9 | INJ | INJ4 signal | 5 | — | 18 | FUTURE MPI |
+| 10 | IGN | IGN1 output | 7 | — | 18 | FUTURE IGN |
+| 11 | IAC | Stepper 1A | 31 | 23 | 18 | CURRENT |
+| 12 | IAC | Stepper 1B | 32 | 24 | 18 | CURRENT |
+| 13 | IAC | Stepper 2A | 30 | 12 | 18 | CURRENT |
+| 14 | IAC | Stepper 2B | 29 | 11 | 18 | CURRENT |
+| 15 | SENSOR | CLT signal | 19 | 19 | 18 | CURRENT |
+| 16 | SENSOR | IAT signal | 20 | 7 | 18 | CURRENT |
+| 17 | SENSOR | TPS signal | 22 | 8 | 18 | CURRENT |
+| 18 | SENSOR | Sensor 5V | 13,28 | 5,10 | 18 | CURRENT |
+| 19 | SENSOR | Sensor GND (shared CLT+IAT+TPS) | 23 | 21 | 18 | CURRENT |
+| 20 | TRIGGER | Trigger signal (Hall) | 25 | 22 | 18 | CURRENT |
+| 21 | TRIGGER | Trigger 5V | 28 | 10 | 18 | CURRENT |
+| 22 | TRIGGER | Trigger GND (separate wire) | 23 | 21 | 18 | CURRENT |
+| 23 | LSU | LSU IP (Nernst+, JPT 1) | TinyWB IP | — | 18 | CURRENT |
+| 24 | LSU | LSU VM (Virtual GND, JPT 2) | TinyWB VM | — | 18 | CURRENT |
+| 25 | LSU | LSU H- (Heater return, JPT 3) | TinyWB H- | — | 18 | CURRENT |
+| 26 | LSU | LSU H+ (Heater PWM, JPT 4) | TinyWB H+ | — | 18 | CURRENT |
+| 27 | LSU | LSU IA (Pump current-, JPT 5) | TinyWB IA | — | 18 | CURRENT |
+| 28 | LSU | LSU UN (Nernst-, JPT 6) | TinyWB UN | — | 18 | CURRENT |
+| 29 | OUTPUT | Fuel pump relay drive | 16 | 6 | 18 | CURRENT |
+| 30 | OUTPUT | Fan relay drive | 15 | 18 | 18 | CURRENT |
+| 31 | OUTPUT | Boost solenoid | 35 | — | 18 | FUTURE TURBO |
+| 32 | INPUT | Clutch switch | 18 | — | 18 | FUTURE |
+| 33 | SPARE | Spare / Flex fuel | 14 | — | 18 | SPARE |
+| 34 | SPARE | Spare / Tacho (optional) | 17 | — | 18 | SPARE |
+| 35 | SPARE | Spare | — | — | 18 | SPARE |
 
-**Pin count by group:** POWER 6 + INJ 4 + IGN 1 + IAC 4 + SENSOR 5 + TRIGGER 3 + LSU 6 + OUTPUT 3 + FUTURE 2 + SPARE 1 = **35**
+**Pin count by group:** POWER 5 + INJ 4 + IGN 1 + IAC 4 + SENSOR 5 + TRIGGER 3 + LSU 6 + OUTPUT 2 + FUTURE 2 + SPARE 3 = **35**
+
+**What needs to change from current DB27 harness:**
+- **🆕 NEW WIRE:** T35 pin 4 — dedicated injector 12V rail (separates injector power from ECU power)
+- **🆕 ADD:** 2A inline fuse on O2 heater 12V line (protects TinyWB)
+- All other wires: **keep existing 18 AWG and colors** — just re-terminate from DB27 crimps to Ampseal crimps
 
 **Scalability notes:**
-- **MPI conversion:** Wire INJ2-4 (T35 pins 8-10) to new injectors. Change TunerStudio to "Semi-Sequential" or "Sequential" injection mode. INJ 12V rail (pin 5) splits to all 4 injectors on engine side.
-- **Ignition control:** Wire IGN1 (T35 pin 11) to Bosch Module 124 input. Install VIKA 99050306801 distributor (no mechanical advance). Enable Speeduino ignition in TunerStudio.
-- **Turbo:** Wire boost solenoid (T35 pin 33) to wastegate actuator or boost control valve. MAP sensor is onboard Speeduino (no extra pin needed). Tune boost table in TunerStudio.
-- **Launch control:** Wire clutch switch (T35 pin 34) to normally-open switch on clutch pedal. Configure launch control RPM limit in TunerStudio. Also useful for anti-stall (increase idle when clutch pressed in gear).
-- **Flex fuel (E85):** Wire flex fuel sensor (T35 pin 35) to GM-style flex sensor. Proto Area 1 input on Speeduino.
+- **MPI conversion:** Wire INJ2-4 (T35 pins 7-9) to new injectors. Change TunerStudio to "Semi-Sequential" or "Sequential" injection mode. INJ 12V rail (pin 4) splits to all 4 injectors on engine side.
+- **Ignition control:** Wire IGN1 (T35 pin 10) to Bosch Module 124 input. Install VIKA 99050306801 distributor (no mechanical advance). Enable Speeduino ignition in TunerStudio.
+- **Turbo:** Wire boost solenoid (T35 pin 31) to wastegate actuator or boost control valve. MAP sensor is onboard Speeduino (no extra pin needed). Tune boost table in TunerStudio.
+- **Launch control:** Wire clutch switch (T35 pin 32) to normally-open switch on clutch pedal. Configure launch control RPM limit in TunerStudio. Also useful for anti-stall (increase idle when clutch pressed in gear).
+- **Flex fuel (E85):** Wire flex fuel sensor (T35 pin 33) to GM-style flex sensor. Proto Area 1 input on Speeduino.
 
 **Full pinout with wire colors in `Speeduino Passat.xlsx` → "Ampseal T35" sheet**
 
