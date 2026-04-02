@@ -694,13 +694,11 @@ npx mlg-converter --format=csv 2025-12-20_16.57.13.mlg
 - **Resolution:** Engine ran fine at CLT 46-47°C with original WUE values (138/122) — the VE valley does not cause a real-world problem. No WUE compensation needed, no VE change needed.
 - **Status:** Closed. Monitor if idle RPM target changes significantly.
 
-### 11. Ballast Resistor — 3.3Ω FAILED, 1.8Ω ARRIVED (2026-03-12)
+### 11. Ballast Resistor — INSTALLED AND WORKING (2026-03-21)
 - **3.3Ω test (2026-03-01):** Engine did NOT start. 2026-03-01_19.08.45.mlg — 1092 samples, 115 cranking, 0 running. Peak RPM 262. I = 9.2V / 5.3Ω = 1.74A < 2.0A pull-in threshold.
-- **1.8Ω 25W wirewound ceramic resistor:** Arrived 2026-03-12. Pending installation.
-- **Expected performance with 1.8Ω:** I_crank = 9.2V / 3.8Ω = 2.42A (+21% margin over 2.0A pull-in). I_running = 14.4V / 3.8Ω = 3.79A.
-- **Installation:** Wire in series with injector signal (between Speeduino INJ1 output and injector). Mount on metal bracket with airflow (gets warm under load).
-- **Tune change:** `injOpen` from 1.0ms → **1.1ms** (lower current = slower opening).
-- **Precaution:** Charge battery fully before testing (alternator marginal at 12.8V). If battery cranking voltage drops below 7.6V, even 1.8Ω won't open injector.
+- **1.8Ω 25W wirewound ceramic resistor:** Installed 2026-03-21. Wired in series between Speeduino INJ1 output and injector.
+- **Result:** Engine starts and runs. Idle feels more stable than without resistor. `injOpen` set to **1.2ms** (user tested, slightly more than recommended 1.1ms — both acceptable).
+- **Performance with 1.8Ω:** I_crank = 9.2V / 3.8Ω = 2.42A (+21% margin over 2.0A pull-in). I_running = 14.4V / 3.8Ω = 3.79A. Injector coil power reduced from 98W → 29W.
 - **Reference files:** DataLogs/ballast_resistor_engineering.py, DataLogs/analyze_mar1_performance.py
 
 ### 12. IAC Cranking Table — FIXED (2026-03-07)
@@ -710,9 +708,9 @@ npx mlg-converter --format=csv 2025-12-20_16.57.13.mlg
 - **Fix:** iacCrankSteps = **0 / 0 / 54 / 141** at same bins
 - **Logic:** Cold engine needs valve MORE open (lower step values) during cranking, not less
 
-### 13. O2 Sensor Wiring — DIAGNOSED (2026-03-07/08)
+### 13. O2 Sensor Wiring — PARTIALLY FIXED (2026-03-15)
 - **Problem:** AFR pegged at 19.7 (sensor dead) — intermittent failure pattern
-- **Root cause:** TinyWB heater 1A return current through thin Speeduino proto area GND trace (~0.2Ω) shifts signal voltage by ~1.5V → AFR reads 19.7 (max). Also: DB9 serial cable (~28AWG) used as sensor cable has loose/intermittent connections.
+- **Root cause:** TinyWB heater 1A return current through thin Speeduino proto area GND trace (~0.2Ω) shifts signal voltage by ~1.5V → AFR reads 19.7 (max). Also: DB9 serial cable (~28AWG) used as sensor cable had loose/intermittent connections.
 - **AFR History:**
   - Nov 19 - Dec 11, 2025: WORKING (95-100% normal readings)
   - Dec 20, 2025: DEAD (91.7% pegged at 19.7)
@@ -720,7 +718,9 @@ npx mlg-converter --format=csv 2025-12-20_16.57.13.mlg
   - Mar 1: Slightly degraded (91% normal)
   - Mar 5-7: DEAD (97% pegged)
   - Mar 8: Partially working after rewiring (45% pegged, 45% normal) — intermittent connection
-- **Fix in progress:** Replace DB9 cable with proper LSU 4.9 Bosch JPT 6-pin connector + 18 AWG wiring. Connect heater 12V to fuel pump relay output (safe — no thermal shock from 3s prime gap). GND to Speeduino screw terminal.
+- **Fix applied (2026-03-15):** DB9 cable replaced with proper LSU 4.9 Bosch JPT 6-pin female connector + 18 AWG wiring. Connects to LSU 4.9 JPT 6-pin male connector. 2A inline fuse added on heater 12V line.
+- **Status (2026-03-21):** AFR still pegged at 19.7. TinyWB board getting very hot — suspected 12V connected to 5V input pin (would destroy CJ125 chip inside TinyWB). If confirmed, TinyWB needs replacement. Do NOT power it again until wiring is verified.
+- **Diagnosis steps:** (1) Verify 5V pin on TinyWB left side goes to Speeduino 5V proto area, NOT 12V screw terminal. (2) Check which component on TinyWB is hot (CJ125 chip). (3) Check 2A fuse is not blown. (4) If CJ125 damaged, board needs replacement.
 - **Reference files:** DataLogs/afr_history.py, DataLogs/analyze_mar8_wiring_test.py
 
 ### 14. Alternator Not Charging — ONGOING (2026-03-07)
@@ -767,8 +767,29 @@ npx mlg-converter --format=csv 2025-12-20_16.57.13.mlg
 
 ### Current Board Status
 - **DRV8825 history:** First module was **dead** (outputting 12V on all coil pins = passing VMOT through). Replaced with new module — outputs 1-5V = correct.
-- **VREF potentiometer:** Set to **3V** (the higher of the two limit positions: 2V and 3V)
-- **Module type:** Clone (not genuine TI)
+- **VREF potentiometer:** Set to **0.8V** (measured at 12V supply)
+- **Module type:** Clone (not genuine TI), **heatsink installed**
+
+### VREF & Current Limiting — Why 0.8V is SAFE
+
+The DRV8825 current limit formula (Pololu, 0.100Ω sense resistors): `Current Limit = VREF × 2`. In full-step mode, actual coil current = 70% of limit = `1.4 × VREF`.
+
+The Bosch 0269980492 has **high-impedance coils (~56Ω per coil)** (✅ VERIFIED by multimeter 2026-03-28). With high-impedance coils, the coil resistance — not the DRV8825 — limits current:
+
+$$I_{actual} = \frac{V_{supply}}{R_{coil}} = \frac{12V}{56\Omega} = 0.214A$$
+
+The DRV8825 only chops (limits current) when coil current reaches its VREF-set target. At 0.214A actual, any VREF above ~0.15V means the driver **never chops** — FETs stay on 100%, coil resistance does all limiting.
+
+| VREF | DRV8825 target | Actual coil current (56Ω @ 12V) | DRV8825 chopping? |
+|------|---------------|-------------------------------|-------------------|
+| 0.1V | 0.14A | 0.14A (clamped — may skip steps) | Yes |
+| 0.15V | 0.21A | 0.21A (just at limit) | Barely |
+| 0.8V | 1.12A | **0.214A** (resistance-limited) | No |
+| 3.0V | 4.2A | **0.214A** (resistance-limited) | No |
+
+**Conclusion:** VREF = 0.8V is safe. Motor power = 0.214² × 56 = 2.56W per coil (only during stepping, not constant). Both motor and DRV8825 are well within limits. The Speeduino wiki advice ("set to maximum") is also correct for high-impedance steppers — any VREF above ~0.15V gives the same 0.214A.
+
+> **⚠️ Contrast with LOW-impedance motors:** A GM IAC (~10Ω coils) at VREF=0.8V would draw 1.12A — potentially safe, but at VREF=3V would draw 4.2A, destroying both motor and driver. Always measure coil resistance first.
 
 ### Correct Outputs
 | Pin | Working Voltage | Dead Driver |
@@ -820,7 +841,7 @@ npx mlg-converter --format=csv $(ls -t *.mlg | head -1)
 11. **Don't assume the injector driver is a bare MOSFET** - It's a VNLD5090-E smart low-side driver rated for 13A with built-in protections. 7A from the injector is 54% of its rating — SAFE. The concern is injector longevity, not Speeduino board damage.
 12. **Don't route O2 heater current through Speeduino proto area GND** - The thin proto traces (~0.2Ω) can't handle the 1A heater return. This causes a voltage offset on the signal, making AFR read 19.7 (max). Use the screw terminal GND for heater return.
 13. **Don't use DB9/serial cable for O2 sensor wiring** - Too thin (~28 AWG), pins corrode and lose contact, causes intermittent sensor failures. Use proper LSU 4.9 JPT connector with 18 AWG wiring.
-14. **Don't connect TinyWB heater 12V to a source that cycles off during running** - Use fuel pump relay output (continuous while running) or ignition-switched power. The 3-second fuel pump prime gap does NOT cause thermal shock (sensor barely warm in 3s).
+14. **Don't connect TinyWB heater 12V to a source that cycles off during running** - Currently on ECU/ignition-switched 12V (same source as ECU, always on when key ON). This is correct — heater needs continuous power while running.
 15. **Don't blindly increase VE at low RPM / high MAP** - The 500-900 RPM / 76-100 kPa zone needs correction (currently 50-57%, too lean), but wait for working O2 sensor data to calibrate correctly.
 
 ## O2 Sensor Wiring (TinyWB + LSU 4.9)
@@ -846,7 +867,7 @@ npx mlg-converter --format=csv $(ls -t *.mlg | head -1)
 | IA | 5 | Light Blue | Pump current – | 20 AWG |
 
 ### Power Connections
-- **Heater 12V (H+):** Connect to **fuel pump relay output** (ignition-switched, turns off when key OFF, safe 3s prime gap doesn't cause thermal shock)
+- **Heater 12V (H+):** Connected to **ECU/ignition-switched 12V** (same source as ECU main power, through 2A inline fuse — stays powered whenever key is ON)
 - **Heater GND (H-):** Returns through TinyWB board → GND pin → **Speeduino GND screw terminal**
 - **Logic 5V:** Speeduino 5V proto area (low current, fine on thin traces)
 - **Signal (LIN):** Speeduino O2 input proto area (low current, fine on thin traces)
@@ -879,12 +900,12 @@ npx mlg-converter --format=csv $(ls -t *.mlg | head -1)
 ### Relay & Fuse Layout
 ```
 BATTERY (+) ──→ ECU/INJ RELAY (coil: ign switch) ──→ FUSE ──→ ECU + Injector 12V
+                                                                └→ 2A fuse ──→ O2 Heater
 BATTERY (+) ──→ FUEL PUMP RELAY (coil: Speeduino GND-switch) ──→ FUSE ──→ Pump
-                                                                      └→ 2A fuse ──→ O2 Heater
 ```
 - **VW standard order:** Battery → Relay → Fuse → Load
 - Fuel pump relay is ground-switched by Speeduino pin 16 (3s prime on power-up, then ON while running)
-- O2 heater 12V taps from fuel pump relay output → **2A inline fuse** → TinyWB H+12V (protects TinyWB if LSU heater shorts)
+- O2 heater 12V taps from **ECU/INJ relay output** (same source as ECU) → **2A inline fuse** → TinyWB H+12V (stays powered whenever key ON)
 
 **Why relays are REQUIRED for pump and fan:**
 Speeduino outputs (pins 15, 16) use SSM3K357R MOSFETs in tiny SOT-23 packages. These switch **relay coils** (~150mA) to ground — they cannot drive motors directly.
