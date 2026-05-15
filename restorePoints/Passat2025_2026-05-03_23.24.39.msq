@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <msq xmlns="http://www.msefi.com/:msq">
-<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="" writeDate="Wed May 06 01:41:12 BST 2026"/>
+<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="&lt;html&gt;Restore Point: Before loading Restore Point Passat2025_2026-04-10_22.48.29 to Passat2025 - &lt;br&gt;Restore Point: Project close - &lt;br&gt;" writeDate="Wed May 06 01:41:05 BST 2026"/>
 <versionInfo fileFormat="5.0" firmwareInfo="" nPages="15" signature="speeduino 202501"/>
 <page>
 <pcVariable name="tsCanId">"CAN ID 0"</pcVariable>

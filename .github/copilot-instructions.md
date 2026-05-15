@@ -41,12 +41,39 @@ This is a **single injector feeding all 4 cylinders** (TBI/Monopoint). Do NOT co
 - **Model:** Magneti Marelli IWM500.01 (confirmed from injector body markings)
 - Rated flow: ~60 lb/hr **@ 3.0 bar** (calculated from Brazilian bench test data, scaling with √pressure)
 - Actual flow @ 1.0 bar: ~34 lb/hr (measured test condition for gasoline)
+- **Actual flow @ 1.2 bar: ~37 lb/hr** (estimated current FPR pressure — user reports FPR is at ~1.2 bar)
 - Actual flow @ 1.5 bar: ~44 lb/hr (measured test condition for alcohol)
+- **FPR pressure: ~1.2 bar** (adjustable via screw on TBI, range 1.0-1.5 bar, max ~2.0 bar)
 - Engine demand at WOT: ~37 lb/hr (75 PS × 0.5 lb/hr/HP)
-- **The injector is right-sized or slightly undersized**, NOT oversized
-- At 80% max duty: flow margin is tight at 1.0 bar (~27 lb/hr usable)
-- VE values above 100% are normal and expected for this setup
-- High VE values do NOT indicate misconfiguration
+- **At 1.2 bar the injector matches demand exactly** (~37 = 37 lb/hr) — better than previously estimated
+- At 80% max duty @ 1.2 bar: ~30 lb/hr usable
+- VE values above 100% are normal and expected for this setup (reqFuel calculated with 60 lb/hr @ 3.0 bar)
+- High VE values do NOT indicate misconfiguration — they compensate for the flow rate / pressure mismatch in reqFuel
+
+### Upgrade Injector — ICD00105 (GM 93214012) for Turbo
+
+**Planned replacement** for turbo conversion. The IWM500.01 does NOT have enough flow for turbo.
+
+- **Model:** ICD00105 (Magneti Marelli) / GM 93214012
+- **Original applications:** GM Blazer/S10/Monza/Kadett/Ipanema 1.8-2.2L monoponto (Brazil)
+- **European equivalent:** GM 17111979 (Opel Corsa-A/B, Kadett-E, Astra F 1.2-1.6L)
+- **Flow @ 1.2 bar: ~50 lb/hr** (reported by Dirceu — Fiat Uno turbo builder, confirmed via WhatsApp)
+- **Flow @ 1.5 bar: ~56 lb/hr** (calculated: 50 × √(1.5/1.2))
+- **Flow @ 2.0 bar: ~65 lb/hr** (calculated: 50 × √(2.0/1.2))
+- **Dimensions (from product listings):** 49.8mm body, 24mm connector, 12.5mm tip — **verify with calipers before purchase**
+- **Impedance:** Unknown — **measure with JT-DSO-LCR500 before installation** (if ~2Ω, ballast 1.8Ω stays; if different, recalculate)
+- **Colour:** Black body
+- **Cost:** ~€15-25
+
+**Real-world confirmation:** Dirceu (WhatsApp contact) swapped two orange IWM523.00 injectors for one ICD00105 on a Fiat Uno turbo kit — reported immediately better response, idle stability, and WOT performance. Single large injector > two small injectors.
+
+| | IWM500.01 (green, current) | ICD00105 (black, planned) |
+|---|---|---|
+| Flow @ 1.2 bar | 37 lb/hr | 50 lb/hr |
+| Flow @ 1.5 bar | 44 lb/hr | 56 lb/hr |
+| NA duty WOT (75 PS) | ~85% @ 1.2 bar | ~66% @ 1.5 bar |
+| Turbo 0.4 bar duty (100 PS) | ❌ >100% | ✅ ~88% @ 1.5 bar |
+| Turbo 0.5 bar duty (105 PS) | ❌ Impossible | ✅ ~84% @ 2.0 bar |
 
 ### Injector Current — WHAT WILL BREAK? (Full Failure Analysis)
 
@@ -836,13 +863,17 @@ npx mlg-converter --format=csv $(ls -t *.mlg | head -1)
 6. **Don't skip trigger angle calibration** - Without it, timing will be wrong by 60-90°!
 7. **Don't enable DFCO with mechanical distributor** - Distributor advances 35-40° at high vacuum on decel. Fuel restore after cut → lean + extreme advance = backfire. Only enable after VIKA electronic distributor + Speeduino ignition control.
 8. **Don't install a knock sensor on this engine** - Hydraulic lifters produce 4-10 kHz noise that overlaps knock frequency (6-8 kHz). Constant false triggers. Use conservative timing maps instead.
-9. **Don't set hardRevLim above 6200 RPM** - Hydraulic lifters, 40-year-old springs, DT cam makes no power above 5500. If engine rebuilt with new springs: 6500 max.
+9. **Don't set hardRevLim above 6200 RPM** - Hydraulic lifters, DT cam makes no power above 5500. Motor is "revisto" (rebuilt) but lifters are still hydraulic. If engine rebuilt with new springs: 6500 max.
 10. **Don't remove the thermostatic air cleaner** - TBI injects above throttle plate; warm intake air helps fuel atomization through manifold, especially during cold starts.
 11. **Don't assume the injector driver is a bare MOSFET** - It's a VNLD5090-E smart low-side driver rated for 13A with built-in protections. 7A from the injector is 54% of its rating — SAFE. The concern is injector longevity, not Speeduino board damage.
 12. **Don't route O2 heater current through Speeduino proto area GND** - The thin proto traces (~0.2Ω) can't handle the 1A heater return. This causes a voltage offset on the signal, making AFR read 19.7 (max). Use the screw terminal GND for heater return.
 13. **Don't use DB9/serial cable for O2 sensor wiring** - Too thin (~28 AWG), pins corrode and lose contact, causes intermittent sensor failures. Use proper LSU 4.9 JPT connector with 18 AWG wiring.
 14. **Don't connect TinyWB heater 12V to a source that cycles off during running** - Currently on ECU/ignition-switched 12V (same source as ECU, always on when key ON). This is correct — heater needs continuous power while running.
 15. **Don't blindly increase VE at low RPM / high MAP** - The 500-900 RPM / 76-100 kPa zone needs correction (currently 50-57%, too lean), but wait for working O2 sensor data to calibrate correctly.
+16. **Don't use the Master Power APL R4449 turbo** - It's rated 145-360 HP, far too large for a 100 PS target on a 1.6L. Use a T25 or GT15 with ~38-42mm compressor rotor. Oversized turbo = massive lag = undriveable.
+17. **Don't exceed 0.4 bar boost on 95 RON simple** - 9.0:1 CR + stock head gasket + conservative spark map = 0.4 bar max on daily fuel. 0.5 bar only with 98 RON.
+18. **Don't run turbo without Speeduino ignition control** - Mechanical distributor cannot retard timing under boost → detonation → destroyed pistons. VIKA + Speeduino ignition is MANDATORY before turbo.
+19. **Don't use two small injectors instead of one large one** - Real-world testing (Dirceu, Fiat Uno turbo) confirmed one ICD00105 > two IWM523.00 (orange). Single injector gives better atomization, response, and idle stability.
 
 ## O2 Sensor Wiring (TinyWB + LSU 4.9)
 
@@ -980,6 +1011,304 @@ Designed with future scalability: ignition control (VIKA distributor), MPI conve
 - **Mouser:** mouser.pt — 571-776164-1 (receptacle), 571-776231-1 (plug), 571-770680-1 (crimp pins)
 - **TME:** tme.eu/pt — Search "Ampseal 776164"
 - **AliExpress:** Search "Ampseal 35 pin connector kit" (cheapest, 2-3 weeks)
+
+## Turbo Kit Padaria — PLAN (LOCKED)
+
+### Overview
+Bolt-on turbo conversion with **zero internal engine modifications**. Motor stays 100% stock.
+
+- **Target boost:** 0.4 bar (5.8 PSI) on 95 RON simple (daily)
+- **Maximum boost:** 0.5 bar (7.3 PSI) on 98 RON (occasional)
+- **Target power:** ~100 PS / 74 kW / ~165 N⋅m (vs. stock 75 PS / 55 kW / 125 N⋅m)
+- **Motor status:** Revisto (rebuilt) — verify with compression test before turbo install
+- **Fuel:** 95 RON simple (não aditivada) is the baseline. 98 RON is bonus.
+
+### Conversion Phases
+
+**PHASE 1 — Pre-turbo (do now):**
+1. Buy ICD00105 injector (~€15-25)
+2. Measure impedance with LCR500 (check if ballast 1.8Ω stays)
+3. Measure dimensions with calipers (confirm TBI fitment)
+4. Swap IWM500.01 → ICD00105
+5. FPR → **1.5 bar** (rotate screw on TBI)
+6. Recalculate reqFuel in TunerStudio (56 lb/hr @ 1.5 bar)
+7. Reduce VE table ~34% (more flow per ms → less VE needed)
+8. Install VIKA 99050306801 distributor (already purchased)
+9. Enable Speeduino ignition control
+10. Verify 18° BTDC with timing light
+
+**PHASE 2 — Turbo install:**
+Mount turbo kit, tune spark + VE tables for boost, configure boost control.
+
+### Hardware — Shopping List
+
+| # | Part | Specification | Est. Cost |
+|---|------|---------------|-----------|
+| 1 | Turbo | T25 or GT15, oil-cooled, internal wastegate ~6 PSI spring | €100-250 (used) |
+| 2 | Exhaust manifold (turbo) | Cast iron, DT/EA827 flange → T25 flange | €80-150 |
+| 3 | Downpipe | T25 flange → 2" pipe | €50-80 |
+| 4 | Exhaust manifold gasket | MLS or graphite | €10-15 |
+| 5 | Oil feed line | AN4 / M12 with 1.5mm restrictor | €15-25 |
+| 6 | Oil return line | AN10 (-10), gravity drain, no restrictions | €15-25 |
+| 7 | Oil drain flange + gasket | Bolt or weld to oil pan | €10-15 |
+| 8 | Compressor outlet → TBI pipe | 2" silicone or aluminium | €20-40 |
+| 9 | T-bolt clamps | 2-3× for 2" connections | €10-15 |
+| 10 | MAC solenoid (3-port) | 12V normally-closed, boost control | €15-25 |
+| 11 | Silicone hose 4mm | MAC solenoid → wastegate actuator | €5-10 |
+| 12 | Air filter | Cone filter or adapter for turbo inlet | €10-20 |
+| 13 | ICD00105 injector | (PHASE 1 — see above) | €15-25 |
+
+**Total estimated: €365-695** (including injector)
+
+### What does NOT change
+
+- ❌ Head gasket (stock is fine to 0.5 bar)
+- ❌ Pistons / rods / bearings
+- ❌ Camshaft
+- ❌ Cylinder head
+- ❌ Block
+- ❌ Valves or lifters
+- ❌ Oil pump
+- ❌ Fuel pump (3 bar stock — sufficient: FPR 1.5 + boost 0.5 = 2.0 bar, pump has 1.0 bar margin)
+- ❌ Intercooler (not needed at 0.3-0.5 bar — air temp rise ~30°C, ~3% power loss, acceptable for padaria)
+- ❌ Blow-off valve (no intercooler piping = no need)
+
+### Oil Circuit Rules (CRITICAL)
+
+```
+Block/head oil port (M12, pressurized) → AN4 line + 1.5mm RESTRICTOR → turbo bearing (top)
+Turbo bearing (bottom) → AN10 line, NO restriction, GRAVITY only → oil pan flange
+```
+
+- Feed: ALWAYS use 1.5mm restrictor — prevents turbo oil flooding/smoking
+- Return: ALWAYS larger than feed (minimum AN10 / ~16mm ID)
+- Return enters oil pan ABOVE oil level — otherwise back-pressures turbo seals
+- Return must descend by gravity — no uphill sections in the line
+
+### Speeduino Turbo Tune (PHASE 2b)
+
+| Setting | Value |
+|---------|-------|
+| MAP bins (VE + Spark) | Refactor to include boost: 20,30,40,50,60,70,80,90,100,**105,110,115,120,125,130,135** kPa |
+| Spark WOT under boost | 100kPa→22°, 110→20°, 120→18°, 130→16° (95 RON conservative) |
+| VE under boost | Calibrate with TinyWB wideband |
+| AFR target under boost | **12.0:1** (rich for safety) |
+| Overboost fuel cut | MAP > **145 kPa** (0.45 bar safety margin) |
+| Boost control | Pin 35, MAC solenoid, open loop duty table by RPM first |
+| Boost target | 140 kPa (0.4 bar) |
+| FPR | 1.5 bar (already set in PHASE 1) |
+
+### Hard Limits — DO NOT EXCEED
+
+| Parameter | Limit | Reason |
+|-----------|-------|--------|
+| Boost max (95 RON daily) | **0.4 bar (5.8 PSI)** | 9.0:1 CR + stock head gasket |
+| Boost max (98 RON) | **0.5 bar (7.3 PSI)** | Absolute max for stock internals |
+| RPM limit | **6200** | Hydraulic lifters (unchanged from NA) |
+| Spark WOT under boost | **Min 16°** | Conservative for 9.0:1 + 95/98 RON |
+| Injector duty cycle | **<90%** | Opening time margin |
+| AFR WOT under boost | **11.5-12.5:1** | Rich = safe (lean kills pistons) |
+
+### Turbo Sizing — IMPORTANT
+
+The **Master Power APL R4449** (sold by Beep Turbo for AP CLI monoponto kits) is **TOO LARGE** for the DT 1.6 at 100 PS:
+- Rotor: 44.0mm, shaft: 49.5mm
+- HP range: **145-360 HP** — minimum is above our target!
+- Cold casing: AR.42, hot casing options: AR.36 to AR.70
+- Would cause severe turbo lag on a 1.6L engine at 0.4 bar
+- Source: https://beepturbo.com.br/loja/index.php?route=product/product&product_id=372
+
+For the DT 1.6 at 100 PS, use a **T25 or GT15** with:
+- Compressor rotor: ~38-42mm
+- Turbine: AR.36 or smaller hot housing
+- HP range covering 60-150 HP
+- Internal wastegate with ~6 PSI (0.4 bar) spring
+
+**Beep Turbo AP CLI monoponto kit** (reference only — currently out of stock):
+- Kit without turbine: R$3,184.89
+- Includes manifold, oil lines, gaskets, pipes — designed for monoponto turbo on VW AP 1.6/1.8/2.0
+- **AP and DT are both EA827 family** — exhaust manifold flange pattern is the same. The Beep Turbo manifold would likely bolt onto the DT head directly.
+- Differences may exist in accessory routing (A/C, power steering) and stud lengths — verify before ordering.
+- Source: https://beepturbo.com.br/loja/index.php?route=product/product&product_id=417
+
+### Performance Estimates
+
+| Fuel | Boost | PS | kW | Torque | 0-100 km/h | Top speed |
+|------|-------|-----|-----|--------|-------------|-----------|
+| Stock (NA) | 0 | 75 | 55 | 125 N⋅m | ~13.5 s | ~163 km/h |
+| **95 RON (daily)** | **0.4 bar** | **~100** | **~74** | **~165 N⋅m** | **~10.5 s** | **~179 km/h** |
+| 98 RON (bonus) | 0.5 bar | ~105 | ~77 | ~175 N⋅m | ~10 s | ~182 km/h |
+
+> **Note:** Top speed values are calculated (GPS). The car's speedometer over-reads by 5-15% (typical VW). Dashboard may show ~195-200 km/h when GPS shows 179.
+
+### What's NOT in the plan (would need internal modifications)
+
+| Boost | PS | Why it's out of scope |
+|-------|-----|----------------------|
+| 0.6 bar | ~110 | 98 RON mandatory, head gasket risk |
+| 0.7 bar | ~115 | Needs MLS gasket + ARP studs (~€120) |
+| 1.0+ bar | ~130+ | Needs MPI conversion + 4-5 bar pump + forged internals (€1500+) |
+
+## Session Findings — May 2026 (Full Tune Audit, No LSU)
+
+Comprehensive open-loop audit performed without a working LSU. All recommendations are physics-based (Heywood ICE Fundamentals + Speeduino source/wiki) with conservative-rich bias for safety.
+
+### Speeduino fuel equation (verified from source + wiki)
+
+$$PW = reqFuel \times \frac{VE}{100} \times \frac{MAP}{100} \times corrections + injOpen$$
+
+- `incorporateAFR = Yes` adds `× (stoich / AFR_target)` to the equation
+- `incorporateAFR = No` ignores the AFR target table entirely (informational only)
+- With `divider=1` + `alternate=Simultaneous` + `nInjectors=1` + 4cyl: **4 squirts per engine cycle** (one per ignition event)
+
+### reqFuel verification — 7.5 ms is correct
+
+Math: `0.4744 g air × 4 cyl / 14.7 stoich = 0.1291 g fuel` ÷ `4 squirts × 4.284 g/s injector` = **7.53 ms** ≈ 7.5 ms ✅
+
+### `incorporateAFR = No` decision
+
+User chose to **keep `incorporateAFR = No`** (informational AFR table only). Required: AFR enrichment **baked into VE table cells** for rows where AFR target < 14.7. Without it, engine runs stoich at WOT (dangerous lean, peak EGT, detonation risk on 9.0:1 CR).
+
+### VE table — physics-based corrections (May 2026)
+
+**Status:** Rows 7–16 multiplied by `14.7 / AFR_target` to bake in enrichment. Rows 1–6 unchanged (target was already 14.7).
+
+Final VE table (TunerStudio orientation, MAP high→low top to bottom; RPM 500→6200 left to right):
+
+```
+MAP (kPa)
+100  89  92  92  93  92  93  93  94  94  94  92  89  86  83  81  78
+ 96  87  88  90  90  90  91  91  92  92  91  90  87  84  81  79  76
+ 90  81  84  85  85  86  87  86  86  86  86  84  83  80  77  76  72
+ 86  77  79  80  81  82  81  83  83  83  83  81  79  77  74  72  70
+ 76  69  72  75  74  75  76  76  77  77  77  75  74  71  69  67  64
+ 70  65  69  70  71  71  72  72  72  73  72  71  69  68  65  63  61
+ 66  60  64  66  67  68  67  68  68  68  68  67  65  64  62  60  58
+ 60  55  60  61  63  63  64  65  65  65  65  64  62  61  59  57  55
+ 56  51  56  58  59  60  61  61  62  62  62  61  59  58  56  55  52
+ 50  47  51  54  55  56  57  58  58  59  58  58  56  55  53  52  51
+ 46  44  47  50  52  53  54  55  55  55  55  55  54  52  51  50  49
+ 40  42  45  47  49  50  51  52  53  53  53  52  52  50  49  48  47
+ 36  41  43  44  46  47  49  50  50  51  51  50  49  48  47  46  45
+ 30  41  41  42  44  45  46  47  48  48  48  48  47  46  45  44  43
+ 26  41  41  41  42  43  44  45  45  46  46  46  45  44  43  42  41
+ 16  40  40  40  40  40  41  41  41  41  41  41  41  40  39  38  37
+```
+
+### AFR target table (informational only with `incorporateAFR=No`)
+
+Range: 14.7 at idle/cruise → 12.5 at WOT (rows 13–16) → progressive enrichment.
+
+### Other tune findings (May 2026)
+
+| Setting | Status | Decision |
+|---|---|---|
+| `tachoMode` | Currently "Match Dwell" | **Should be "Fixed Duration"** (Speeduino not controlling ignition) |
+| `fuelTrim1Table` | Contains -50% cells | Clear to all 0 (was disabled by `fuelTrimEnabled=No` but unsafe latent value) |
+| `iacAlgorithm` | "Stepper Open Loop" | **Change to "None" while valve disconnected** (no phantom step pulses). Switch back when valve reconnected. |
+| `dfcoEnabled` | Off | Keep OFF until VIKA + Speeduino ignition (mechanical advance retards 35-40° on tip-out → backfire risk) |
+| AE values (100/150/200/250) | Aggressive | Keep — compensates for TBI wall-wetting + dead manifold heater + mechanical timing imprecision + no dashpot |
+| ASE per issue 6b (155/151/101/30) | Pending application to live tune | Apply when LSU works for verification |
+
+### Open Loop vs Closed Loop IAC — Open Loop wins
+
+Open Loop is simpler and matches user's needs (no AC, no power steering, no varying loads). Closed Loop adds PID complexity and requires a stable IAC↔RPM mechanical response (which the Nov 19 analysis showed is broken — see "IAC mechanical issue" below). Plan:
+1. Plain open-loop tables (already configured correctly) for first 2–4 weeks
+2. Optionally enable Speeduino's **dashpot feature** (`iacFastIdle` + `dashpotPct=30-50` + `dashpotTime=1.5s`) — works in open-loop, gives clean tip-out behavior
+3. Only consider closed-loop if open-loop proves stable AND mechanical IAC issue is fixed
+
+### IAC mechanical issue (unresolved Nov 19, 2025)
+
+`IAC_BALLAST_ANALYSIS_RESULTS.txt` documented that the Bosch 0269980492 IAC moves electrically (90-159 steps) but **RPM correlation is near zero** (0.18 vs expected -0.5 to -0.8). The valve is electromechanically functional but airflow doesn't change. Diagnosed candidates (priority order):
+1. **IAC bypass passage blocked** (carbon, debris)
+2. **IAC port mismatch** — valve in wrong TBI port
+3. **Vacuum leak elsewhere** dominates total air
+4. **Butterfly screw open too far** — engine breathes around the IAC
+
+**This is a mechanical problem, not a tune problem.** No tune change fixes it. Must be solved before relying on the IAC. When valve reconnected: clean passage, verify port, leak-check, re-set butterfly.
+
+### Pre-reconnection IAC checklist
+
+1. Measure coil resistance (multimeter A1↔A2, B1↔B2): ~50Ω = high-Z = keep VREF 0.8V. Other = recalc.
+2. IAC bypass passage clear (light + compressed air both directions)
+3. Confirm port: must bypass throttle plate, not just vacuum signal
+4. Vacuum leak test (carb cleaner around intake)
+5. DRV8825 alive (coil pins 1-5V, not 12V)
+6. Note current butterfly screw position before reconnection
+
+### Day-of-reconnection sequence
+
+1. Key OFF, plug IAC connector
+2. TS: `iacAlgorithm` "None" → "Stepper Open Loop" → burn
+3. Key ON (engine off): Speeduino homes stepper (audible move)
+4. Cold start: target 1100-1200 RPM. Adjust butterfly screw to hit target.
+5. Drive to fully warm. Target 800 RPM warm idle (or 850 for no-dashpot margin)
+6. Datalog warmup, refine `iacOLStepVal` per bin
+7. Optionally enable dashpot feature for clean tip-outs
+
+### "No dashpot" implications (current state)
+
+With valve disconnected, no dashpot effect → engine RPM crashes on tip-out → contributes to clutch-engagement bog. Compensations:
+- Slightly higher butterfly idle (~850 warm, not 800) for margin
+- Aggressive AE values for re-acceleration recovery
+- DFCO stays OFF
+- Driver smooth-throttle technique on tip-outs
+
+### VIKA 99050306801 distributor — pulse-width uncertainty
+
+User asked: "Can I do sequential injection with the VIKA?" Honest answer:
+
+- VIKA cross-references OE numbers 050905205AR family (EA827 Hallgeber distributors)
+- Some original applications used **sequential injection** with a longer Hall pulse for cyl #1 reference
+- **Unverified whether the VIKA reproduces this longer pulse** — need to scope it
+- Even if it does, Speeduino's stock trigger patterns don't decode pulse-width
+- **Path 1 (recommended if longer pulse exists):** Build pulse-width discriminator (74HC14 + RC, ~€2), feed long pulse to Speeduino cam input, use "Basic Distributor + cam sync"
+- Path 2: Custom firmware decoder (significant work)
+- **Path 3: Don't bother until MPI conversion** — sequential is meaningless with single TBI injector and single coil. Wasted on current hardware.
+
+### IPO emissions (Portugal, pre-1992 carb car)
+
+Tested gases: **CO, HC, λ** — NOT CO2 (CO2 is registration/IUC tax only).
+
+| Test | Pre-1992 limit | Expected with current tune |
+|---|---|---|
+| CO at idle | ≤ 4.5% | ~0.3-0.8% ✅ |
+| CO at high idle (2500 RPM) | ≤ 3.5% | ~0.3-0.8% ✅ |
+| HC at idle | ≤ 1000 ppm | ~200-400 ppm ✅ |
+| Lambda at high idle | 0.97-1.03 | 0.95-1.02 ⚠️ tight |
+
+Pre-IPO checklist: engine fully warm, no vacuum leaks, fresh NGK BP6-E plugs, all 4 cyl firing, FPR 1.0-1.5 bar, optional €20 pre-test at auto-elétrica with 5-gas analyzer. **Cat NOT required** for pre-July-1992 homologation.
+
+### Firmware update procedure (if needed)
+
+ECU loses tune (flash + EEPROM wiped). PC keeps `.msq` safe.
+1. Save current `.msq` outside project folder before flashing
+2. Verify recent restore points in `restorePoints/`
+3. Close TunerStudio, flash via Speeduino Updater / Xloader
+4. Reopen TS, accept new INI if prompted
+5. Open saved `.msq`, **Burn to ECU** (Ctrl+B)
+6. Verify VE/AFR/IAC tables, trigger angle, sensors read sane values
+
+Recommendation: **don't update unless specific reason** (bug fix, new feature you need). 2025.01.6 is stable.
+
+### Tune tables — Excel-friendly copy/paste formats
+
+When user asks for tables to copy into TunerStudio, use:
+- **TunerStudio orientation:** MAP rows high→low (top→bottom), RPM cols low→high (left→right)
+- **Tab-separated values** (Excel-compatible)
+- Include row/column header labels in a separate line below the table for clarity
+
+### Lambda vs AFR
+
+Lambda (λ) = AFR / 14.7. Same data, different units. TunerStudio Tools → Preferences → AFR/Lambda toggles display. Useful for E85/methanol where stoich isn't 14.7.
+
+### Tune readiness assessment (May 2026)
+
+**Status: 80% ready, not 100%.** Without LSU, cannot verify per-cell VE accuracy. Current tune:
+- ✅ Will run safely (bias is rich, not lean)
+- ✅ Fixes dangerous lean WOT (was stoich, now ~12.5)
+- ✅ Fixes clutch-engagement bog (low-RPM/high-MAP cells enriched)
+- ⚠️ Individual cells could be off by ±5% — only LSU + VE Analyze Live can finalize
 
 ## User & Environment
 
