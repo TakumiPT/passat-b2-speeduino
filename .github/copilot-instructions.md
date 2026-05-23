@@ -1207,7 +1207,7 @@ Range: 14.7 at idle/cruise → 12.5 at WOT (rows 13–16) → progressive enrich
 | `fuelTrim1Table` | Contains -50% cells | Clear to all 0 (was disabled by `fuelTrimEnabled=No` but unsafe latent value) |
 | `iacAlgorithm` | "Stepper Open Loop" | **Change to "None" while valve disconnected** (no phantom step pulses). Switch back when valve reconnected. |
 | `dfcoEnabled` | Off | Keep OFF until VIKA + Speeduino ignition (mechanical advance retards 35-40° on tip-out → backfire risk) |
-| AE values (100/150/200/250) | Aggressive | Keep — compensates for TBI wall-wetting + dead manifold heater + mechanical timing imprecision + no dashpot |
+| AE values (was 100/150/200/250) | **CORRECTED 2026-05-22** | **Reduced to 50/80/110/140**, `aeTime` 600→**300 ms**, `taeThresh` 30→**40 %/s**. Original inflated values were a misdiagnosed workaround for intake backfires whose real cause was DFCO ON + mechanical vacuum advance distributor (tip-out → vacuum advance 35-40° + fuel cut + fuel restore = backfire). DFCO is now OFF (Issue #9) so the workaround was obsolete. The inflated AE was producing raw liquid gasoline out of the exhaust on every throttle blip (PW reaching ~9 ms). After reduction, peak PW during AE = 5.1 ms, gasoline smell gone, liquid drip gone (per 2026-05-23 datalog). |
 | ASE per issue 6b (155/151/101/30) | Pending application to live tune | Apply when LSU works for verification |
 
 ### Open Loop vs Closed Loop IAC — Open Loop wins
@@ -1309,6 +1309,124 @@ Lambda (λ) = AFR / 14.7. Same data, different units. TunerStudio Tools → Pref
 - ✅ Fixes dangerous lean WOT (was stoich, now ~12.5)
 - ✅ Fixes clutch-engagement bog (low-RPM/high-MAP cells enriched)
 - ⚠️ Individual cells could be off by ±5% — only LSU + VE Analyze Live can finalize
+
+## Session Findings — May 23, 2026 (post-AE-reduction datalog)
+
+First datalog after reducing AE values (`taeRates` → 50/80/110/140, `aeTime` → 300 ms, `taeThresh` → 40 %/s). Log: `DataLogs/2026-05-23_13.07.31.mlg` — 581 s, 8703 samples, 15 Hz.
+
+### Data quality
+
+- Errors: **0**, Sync loss: **0**, Loops/s: 1617–4775 — trigger and CPU healthy
+- TPS max recorded: **60.5%** across every RPM band → TPS calibration is capped (likely calibrated with partial pedal travel; full pedal exceeds stored `tpsMax`). Recalibrate via TS Tools → Calibrate TPS with foot fully on floor.
+
+### AE reduction — confirmed working
+
+| Metric | Before (100/150/200/250) | After (50/80/110/140) |
+|---|---|---|
+| Peak PW during AE | ~9 ms (estimated) | **5.09 ms** (measured) |
+| Peak AE % | up to 250+ | 162% typical, 202% peak |
+| Black liquid drip | Heavy | None (only dry sooty residue — normal combustion) |
+| Gasoline smell | Strong | Gone (user confirmed) |
+| Hesitation under accel | Yes | Gone (except 1200 RPM bog — separate issue) |
+
+79 AE events captured. By TPSdot bin:
+- 50–150 %/s: 66 events, peak PW avg 3.20 ms
+- 150–300 %/s: 11 events, peak PW avg 3.58 ms
+- 300–500 %/s: 2 events, peak PW avg 4.24 ms
+
+**Keep these AE values.** Further refinement requires a working LSU.
+
+### Idle now 1222 RPM — root cause identified
+
+Warm idle (CLT≥80, TPS<3): mean **1222 RPM**, stdev ±73, MAP 33.7 kPa. Should be 800–900.
+
+**Root cause (May 23 insight):** The IAC is disconnected but **the stepper plunger is frozen at whatever step it was last commanded to before disconnection**. Bipolar steppers hold their position by friction with no power. The Bosch 0269980492 is mechanically inverted:
+- Step 0 = plunger retracted = MAX bypass air
+- Step 165 = plunger extended = ZERO bypass air
+
+If it was disconnected mid-range, it's now leaking idle air through the IAC port, so the **factory butterfly screw position over-supplies air** → high idle.
+
+**Fix sequence (try in order, all reversible):**
+1. **Mechanical close (free):** With connector unplugged, push the IAC plunger fully into its seat with a finger / screwdriver until it bottoms. Friction holds it. Start engine, check idle.
+2. **Blank the port:** Pull IAC, install a blanking plug/plate over the bypass passage.
+3. **Reconnect + home (requires working IAC mechanically — see Issue #15 unresolved):** Plug IAC in, set `iacAlgorithm = "Stepper Open Loop"`, key ON → Speeduino homes to step 165 = closed.
+
+Only after idle is at ~850 RPM, re-evaluate the VE table low-MAP cells (they were tuned at 1222 RPM idle).
+
+### Bog event confirmed (2nd gear, ~1200 RPM, sudden WOT)
+
+Captured at t=371.6s in the log. User cruising in 2nd at 1167 RPM, stomped throttle → MAP filled to 98 kPa → RPM **dropped to 882 (near-stall)** → recovered to 1274 RPM.
+
+**Diagnosis: not a tune problem.** The mechanical distributor's vacuum advance retracts under load, and at 1100–1200 RPM the centrifugal weights barely contribute → effective advance collapses from ~32° (cruise) to **18–20° (loaded)** — far below the ~32° the engine actually needs at WOT for that RPM. Engine cannot make enough torque to overcome drivetrain inertia + load.
+
+**Three options:**
+1. **Driving habit (now):** stay above 2000 RPM in 2nd before applying WOT
+2. **Slight VE bump (limited effect):** raise 100 kPa row at RPM 800–1200 by ~5%, will reduce but not eliminate
+3. **Real fix:** install VIKA 99050306801 + Speeduino ignition control → Speeduino can hold ~32° advance at 1200 RPM WOT regardless of MAP
+
+### Alternator now charging — Issue #14 RESOLVED
+
+| Phase | Voltage |
+|---|---|
+| Cranking minimum | **5.9 V** ⚠️ (new concern — see below) |
+| Running @ RPM>1000 avg | **13.68 V** ✅ |
+| Running max | **14.00 V** ✅ |
+| Dips <12.5 V while running | 6 transient samples |
+
+### Cranking battery sags to 5.9 V — NEW concern
+
+8-second crank (target <3 s), battery hits **5.9 V** during cranking. Causes (in order of likelihood):
+1. Weak battery (load test at auto-elétrica)
+2. Corroded battery terminals or ground strap
+3. High starter draw (worn brushes / dragging armature)
+4. Long crank duration compounds voltage sag
+
+Address before LSU work — low cranking voltage affects every cold start.
+
+### Operating zone distribution (where engine actually spent time)
+
+| RPM band | Time share | Comment |
+|---|---|---|
+| 500–1000 | 16% | Deceleration / settling |
+| **1000–1500** | **61%** | City driving + elevated idle |
+| 1500–2500 | 17% | Mild acceleration / cruise |
+| 2500–4000 | 4.5% | Highway-ish |
+| 4000–5000 | 1% | Brief |
+| 5000–6500 | 0.4% | Touched rev limit once (6227 RPM) |
+
+Conservative driving profile. Injector duty cycle: avg 9.2%, max 90% (3 samples at rev-limit only). **Injector is not the limiting factor.**
+
+### Gammae confirms VE table is dialed in
+
+Warm Gammae (total fuel correction): **101 ± 1**. Speeduino isn't fighting the VE table — May 2026 VE revision is on target.
+
+### Warmup timing (28°C ambient, Lisbon)
+
+CLT 30→40°C at t+61s, →50°C @ t+127s, →60°C @ t+200s, →70°C @ t+286s, →80°C @ t+363s, →90°C @ t+435s. ~7 minutes to full operating temperature. Gwarm taper: 129% cold → 100% by 80°C. ✅ WUE healthy.
+
+### Black liquid from exhaust — RESOLVED
+
+User confirmed residue is **dry, sooty**. Combustion soot carried by exhaust water condensation. Not raw fuel (AE fix), not coolant (no leak), not oil. **Normal for short city trips that never get the exhaust pipe hot enough to dry out.**
+
+### Updated action list (priority order, May 23 state)
+
+1. **Battery + starter check** — 5.9 V cranking is too low. Load-test battery, clean terminals, check engine ground strap.
+2. **IAC plunger mechanical close** — push frozen IAC plunger into seat → restart → verify idle drops to ~850 RPM.
+3. **TPS calibration** — TS Tools → Calibrate TPS with foot fully on floor.
+4. **LSU recovery** — only after fueling proven correct: clean tip in carb cleaner, verify TinyWB wiring (5V on 5V pin, not 12V) before powering.
+5. **Driving habit** — >2000 RPM in 2nd before WOT until VIKA + Speeduino ignition is installed.
+6. **VIKA + Speeduino ignition** (after IPO inspection) — eliminates the 1200 RPM WOT bog permanently.
+
+### What is healthy and must NOT be touched
+
+- VE table (Gammae = 101 proves it's dialed in)
+- AE values (peak PW now 5 ms, no liquid fuel, no smell)
+- WUE bins (cold 129% → warm 100% taper perfect)
+- AFR target table (informational only, leave as-is)
+- DFCO (stays OFF)
+- Trigger setup (0 sync loss across 581 s)
+- `reqFuel = 4.3 ms` (engine balanced around this)
+- `incorporateAFR = No` (VE table has enrichment baked in for rows 7–16)
 
 ## User & Environment
 

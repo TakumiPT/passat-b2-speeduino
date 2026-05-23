@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <msq xmlns="http://www.msefi.com/:msq">
-<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="" writeDate="Sat May 23 13:06:24 BST 2026"/>
+<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="&lt;html&gt;Restore Point: Project close - &lt;br&gt;" writeDate="Fri May 22 19:12:05 BST 2026"/>
 <versionInfo fileFormat="5.0" firmwareInfo="Speeduino+2025.01.6" nPages="15" signature="speeduino 202501"/>
 <page>
 <pcVariable name="tsCanId">"CAN ID 0"</pcVariable>
@@ -486,8 +486,8 @@
 <constant name="tachoDiv">"Normal"</constant>
 <constant digits="0" name="tachoDuration" units="ms">3.0</constant>
 <constant digits="0" name="maeThresh" units="kPa/s">70.0</constant>
-<constant digits="0" name="taeThresh" units="%/s">40.0</constant>
-<constant digits="0" name="aeTime" units="ms">300.0</constant>
+<constant digits="0" name="taeThresh" units="%/s">30.0</constant>
+<constant digits="0" name="aeTime" units="ms">600.0</constant>
 <constant digits="1" name="taeMinChange" units="%">1.0</constant>
 <constant digits="0" name="maeMinChange" units="kPa">2.0</constant>
 <constant name="displayB1">"RPM"</constant>
@@ -779,10 +779,10 @@
          790.0 
       </constant>
 <constant cols="1" digits="0" name="taeRates" rows="4" units="%">
-         50.0 
-         80.0 
-         110.0 
-         140.0 
+         100.0 
+         150.0 
+         200.0 
+         250.0 
       </constant>
 <constant cols="1" digits="0" name="wueBins" rows="10" units="C">
          -40.0 
