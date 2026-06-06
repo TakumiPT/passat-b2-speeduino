@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <msq xmlns="http://www.msefi.com/:msq">
-<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="" writeDate="Sat May 23 13:06:24 BST 2026"/>
+<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="" writeDate="Sun May 24 22:10:38 BST 2026"/>
 <versionInfo fileFormat="5.0" firmwareInfo="Speeduino+2025.01.6" nPages="15" signature="speeduino 202501"/>
 <page>
 <pcVariable name="tsCanId">"CAN ID 0"</pcVariable>
@@ -526,8 +526,8 @@
 <constant digits="0" name="flexFreqLow" units="Hz">50.0</constant>
 <constant digits="0" name="flexFreqHigh" units="Hz">150.0</constant>
 <constant digits="0" name="boostMaxDuty" units="%">80.0</constant>
-<constant digits="0" name="tpsMin" units="ADC">31.0</constant>
-<constant digits="0" name="tpsMax" units="ADC">225.0</constant>
+<constant digits="0" name="tpsMin" units="ADC">30.0</constant>
+<constant digits="0" name="tpsMax" units="ADC">147.0</constant>
 <constant digits="0" name="mapMin" units="kpa">10.0</constant>
 <constant digits="0" name="mapMax" units="kpa">260.0</constant>
 <constant digits="0" name="fpPrime" units="s">3.0</constant>
