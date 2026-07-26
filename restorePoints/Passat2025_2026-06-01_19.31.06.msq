@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <msq xmlns="http://www.msefi.com/:msq">
-<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="" writeDate="Sat Jul 25 18:28:45 BST 2026"/>
+<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="&lt;html&gt;Restore Point: Project close - &lt;br&gt;" writeDate="Mon Jun 01 19:31:06 BST 2026"/>
 <versionInfo fileFormat="5.0" firmwareInfo="Speeduino+2025.01.6" nPages="15" signature="speeduino 202501"/>
 <page>
 <pcVariable name="tsCanId">"CAN ID 0"</pcVariable>
@@ -1661,11 +1661,11 @@
 <constant name="Auxin13pinb">"8"</constant>
 <constant name="Auxin14pinb">"7"</constant>
 <constant name="Auxin15pinb">"8"</constant>
-<constant name="iacStepperInv">"Yes"</constant>
+<constant name="iacStepperInv">"No"</constant>
 <constant name="iacCoolTime">"1"</constant>
 <constant name="boostByGearEnabled">"Off"</constant>
 <constant name="blankfield">""</constant>
-<constant name="iacStepperPower">"When Active"</constant>
+<constant name="iacStepperPower">"Always"</constant>
 <constant digits="0" name="iacMaxSteps" units="Steps">162.0</constant>
 <constant digits="1" name="idleAdvStartDelay" units="S">0.7</constant>
 <constant digits="0" name="boostByGear1">14.0</constant>

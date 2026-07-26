@@ -13,8 +13,9 @@
 - [Why This Exists](#why-this-exists)
 - [The Injector Current Problem](#the-injector-current-problem)
 - [Ballast Resistor Engineering](#ballast-resistor-engineering)
-- [Test Results (2026-03-01)](#test-results-2026-03-01)
+- [Test Results (2026-03-01)](#test-results-2026-03-01--historical)
 - [Tune Configuration](#tune-configuration)
+- [Current Active Problems](#current-active-problems-2026-07-26)
 - [Known Issues & Fixes](#known-issues--fixes)
 - [Repository Structure](#repository-structure)
 - [Working with Datalogs](#working-with-datalogs)
@@ -31,9 +32,13 @@
 | Gol G2 TBI throttle body mounted | ✅ Done |
 | Speeduino v0.4.4c wired (fuel only) | ✅ Done |
 | Engine starts and runs on EFI | ✅ Done (2026-03-01) |
-| VE table baseline tuned | 🔧 In progress |
+| VE table baseline tuned | 🔧 In progress (shape good, WOT ~30% lean) |
 | WUE (warmup enrichment) calibrated | 🔧 In progress |
-| Ballast resistor installed (injector protection) | ⏳ Next |
+| Ballast resistor installed (injector protection) | ✅ Done (1.8Ω 25W) |
+| Wideband O2 (LSU 4.9 + TinyWB) working | 🔴 Broken (pin 6 JPT contact fault) |
+| IAC stepper moving | 🔴 Not moving (diagnostic in progress) |
+| TPS calibrated | 🔴 Needs recalibration (span 117 ADC) |
+| AE (accel enrichment) calibrated | 🔴 Below backfire threshold |
 | IPO inspection passed | ⏳ Pending |
 | VIKA electronic distributor installed | ⏳ After IPO |
 | Speeduino ignition control enabled | ⏳ After distributor swap |
@@ -86,6 +91,8 @@ The **IWM500.01** is a Brazilian-market SPI injector used in VW Gol, Parati, Sav
 | Color variant | GREEN (1.6–1.8L engines) |
 | Drive method (original) | Peak-and-hold: ~4A peak → 1.2A hold (PWM) |
 | Drive method (current) | Direct: 7A continuous through VNLD5090-E |
+
+> **Ballast resistor installed:** 1.8Ω / 25W wirewound in series with injector. `injOpen` should be 1.1ms (currently 1.2ms in tune — see Known Issues P8).
 
 > **Single injector for 4 cylinders.** Do not compare flow rates with MPI injectors. VE values above 100% are normal and expected.
 
@@ -239,7 +246,9 @@ $$I_{run} = \frac{14.4\text{V}}{3.8\Omega} = 3.79\text{A} \quad (47\% \text{ red
 
 ---
 
-## Test Results (2026-03-01)
+## Test Results (2026-03-01) — Historical
+
+> Newer datalogs exist in `DataLogs/` (2026-05-24 through 2026-07-25). Latest analysis: 2026-07-25 — wideband pin 6 fault confirmed (79.3% pegged, 195 transitions in 96s).
 
 Two test sessions were logged consecutively.
 
@@ -322,17 +331,42 @@ With a **mechanical distributor**, deceleration creates high manifold vacuum (20
 
 ---
 
+## Current Active Problems (2026-07-26)
+
+| # | Problem | Impact | Next Action |
+|---|---------|--------|-------------|
+| P1 | Wideband pin 6 contact fault — AFR pegged 19.7 | Blocks ALL tuning | Install JPT 2.8mm terminals |
+| P2 | IAC stepper not moving | No idle air control | Multimeter diagnostic (Vref, sleep/reset, VMOT, continuity) |
+| P3 | Cold start fails after days parked | Needs brake cleaner | Test battery 75Ah + fresh gasoline |
+| P4 | Dies on fast throttle stab | Dangerous stall | Apply AE fix (after TPS recalibration) |
+| P5 | WOT VE ~30% lean | Engine damage risk | Fix injOpen; scale VE after wideband |
+| P6 | TPS calibration wrong span | AE thresholds wrong | Recalibrate by hand at TBI |
+| P7 | CTPSEnabled floating input | Cosmetic | Set Off |
+| P8 | injOpen 1.2ms (should be 1.1ms) | Idle/cruise rich | Change to 1.1ms |
+
+See [DOCUMENTACAO_REVISAO_TUNE_2026-06-10.md](DOCUMENTACAO_REVISAO_TUNE_2026-06-10.md) for full tune review.
+
+---
+
 ## Known Issues & Fixes
 
 | # | Issue | Status | Fix |
 |---|-------|--------|-----|
+| P1 | Wideband AFR pegged 19.7 ~80% (pin 6 JPT terminal no grip) | 🔴 Open | JPT 2.8mm female crimp terminals ordered |
+| P2 | IAC stepper not moving (replaced motor + DRV8825) | 🔴 Open | Diagnostic: Vref, nSLEEP/nRESET, VMOT, coil continuity |
+| P3 | Cold start fails after long parking (needs brake cleaner) | 🔴 Open | Test battery 75Ah + fresh gasoline |
+| P4 | Dies on fast throttle stab (transient bog/stall) | 🔴 Open | AE fix: taeRates 110/210/330/380, taeThresh 25, aeTime 450 |
+| P5 | VE table WOT ~30% lean (peak 94%, should be ~125-135%) | 🔴 Open | Fix injOpen; WOT scaling after wideband |
+| P6 | TPS calibration suspicious (tpsMin=30, tpsMax=147, span=117 ADC) | 🔴 Open | Recalibrate by hand at TBI |
+| P7 | CTPSEnabled=On with no CTPS wired (floating input) | 🟡 Open | Set Off |
+| P8 | injOpen=1.2ms, should be 1.1ms (ballast 1.8Ω approved) | 🟡 Open | Change to 1.1ms |
 | 1 | VE table too lean at idle (68%) | ✅ Fixed | Increased to 125% at 100kPa/500RPM |
 | 2 | IAC closed-loop max was 54 (should be 162) | ✅ Fixed | Changed to 162 (98% of 165 physical limit) |
 | 3 | Rev limiter too high (7000 RPM) | ✅ Fixed | Set to 6200 RPM (hydraulic lifters) |
 | 4 | Hot idle rich (AFR 12.5–12.8 vs target 14.7) | ✅ Fixed | 5 VE cells corrected at hot idle |
 | 5 | Cold running lean (AFR 16–17.6 at 28–50°C) | ✅ Fixed | WUE bins increased by 4–17% |
 | 6 | Voltage correction flat (98–110%) | ✅ Fixed | Corrected to 70–255% range |
-| 7 | 3.3Ω resistor prevents start | ✅ Diagnosed | Need 1.8Ω (see analysis above) |
+| 7 | 3.3Ω resistor prevents start | ✅ Superseded | 1.8Ω installed (see analysis above) |
 | 8 | Apparent lean stall at CLT 40–50°C | ✅ Resolved | Not a stall — user turned key off intentionally |
 | 9 | Poor idle stability (σ=60 RPM) | 🔧 Open | Needs IAC or butterfly adjustment |
 | 10 | No hot running data (CLT 80°C+) | 🔧 Open | Need longer datalog |
@@ -415,18 +449,22 @@ py ballast_resistor_engineering.py  # Complete resistor calculations
 
 ## Future Plans
 
-### Phase 1: Baseline Tune (current)
-- Apply ASE fix (155/151/101/30) for cold start enrichment
-- Get stable warm idle at 80°C+
-- Collect longer datalogs (5–10 min drives)
-- ~~MTE-Thomson 4053~~ **won't fit** (M12×1.5 vs M10 hole on Passat B2 flange) — buy correct sensor: **VW 026 906 161** / HELLA 6PT 009 107-561 / Bosch 0 280 130 026 (M10×1, ~€10)
-- Calibration values for VW 026 906 161: **25°C=2080Ω, 80°C=294Ω** (HELLA verified); **0°C=6577Ω** (CALCULATED from β=3750K — must verify with multimeter + ice water)
-- Install MTE-Thomson 3018 gauge sender in coolant flange (verify thread fitment first)
+### Phase 1: Fix Now (no wideband needed)
+- IAC diagnostic: measure Vref (0.35V), nSLEEP/nRESET (5V), VMOT (12V), coil continuity
+- TPS recalibration: by hand at TBI, get true tpsMin/tpsMax ADC values
+- Battery test: 75Ah swap or charge 45Ah fully
+- Fresh gasoline if car sat >2 weeks
+- injOpen 1.2 → 1.1ms (ballast 1.8Ω approved value)
+- AE fix: taeRates 110/210/330/380, taeThresh 25, aeTime 450ms (after TPS recalibration)
+- VE 500 RPM cells: 89→72, 87→70, 81→68
+- CTPSEnabled → Off
 
-### Phase 2: Ballast Resistor
-- Install **1.8Ω / 25W wirewound** in series with injector
-- Adjust `injOpen` from 1.0ms → ~1.1ms
-- Verify cold start and warm restart
+### Phase 2: After Wideband Fixed (pin 6 JPT terminals)
+- Clean datalog → verify AFR live
+- Enable closed-loop (egoLimit 5-7%, not 15%)
+- WOT pull (2nd/3rd gear, 2000→6000 RPM) → scale VE 86-100kPa to ~125-135%
+- Fine AE tuning with AFR feedback
+- Re-check injector duty at WOT (thermal constraint)
 
 ### Phase 3: IPO Inspection
 - Pass Portuguese vehicle inspection
