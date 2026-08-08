@@ -331,20 +331,56 @@ With a **mechanical distributor**, deceleration creates high manifold vacuum (20
 
 ---
 
-## Current Active Problems (2026-07-26)
+## Current Active Problems (2026-07-30)
 
 | # | Problem | Impact | Next Action |
 |---|---------|--------|-------------|
-| P1 | Wideband pin 6 contact fault — AFR pegged 19.7 | Blocks ALL tuning | Install JPT 2.8mm terminals |
+| P1 | Wideband pin 6 contact fault — AFR pegged 17–19 across ALL cells | Blocks ALL VE/AFR-based tuning | Install JPT 2.8mm terminals |
 | P2 | IAC stepper not moving | No idle air control | Multimeter diagnostic (Vref, sleep/reset, VMOT, continuity) |
-| P3 | Cold start fails after days parked | Needs brake cleaner | Test battery 75Ah + fresh gasoline |
-| P4 | Dies on fast throttle stab | Dangerous stall | Apply AE fix (after TPS recalibration) |
-| P5 | WOT VE ~30% lean | Engine damage risk | Fix injOpen; scale VE after wideband |
-| P6 | TPS calibration wrong span | AE thresholds wrong | Recalibrate by hand at TBI |
+| P3 | Cold start fails after days parked | Needs brake cleaner OR fresh gasoline spray on butterfly | **Apply new priming (9/7/6/4 ms) + cranking enrich (300/260/240/230 %)** in TS + Burn |
+| P4 | Dies on fast throttle stab | Dangerous stall | Apply AE fix (after cable/TPS fix) |
+| P5 | VE table can't be autotuned (WB unreliable) + WOT never reached | High-load cells untested | Freeze VE map. Fix P1 + P6 first, then autotune. |
+| P6 | **Pedal only reaches ~60 % of butterfly travel** (cable slack / adjustment) | Engine never at WOT; TPS-thresholded logic (tpsflood, egoTPSMax, iacTPSlimit) unreachable; ~30–40 % power loss | Adjust throttle cable at TBI adjuster; then recalibrate TPS at full pedal |
 | P7 | CTPSEnabled floating input | Cosmetic | Set Off |
 | P8 | injOpen 1.2ms (should be 1.1ms) | Idle/cruise rich | Change to 1.1ms |
 
-See [DOCUMENTACAO_REVISAO_TUNE_2026-06-10.md](DOCUMENTACAO_REVISAO_TUNE_2026-06-10.md) for full tune review.
+### Cold-start (P3) — 2026-07-30 diagnosis
+
+Symptom: after ~1 week parked, engine won't start. A small brake-cleaner spray, or a squirt of fresh gasoline directly on the butterfly, makes it fire immediately. Once running (hot), the car drives fine.
+
+Root cause: TBI cold-crank fuelling too weak. At summer ambient (~30–40 °C engine) the priming pulse interpolates to only ~4.5 ms — after subtracting `injOpen` 1.2 ms, that's ~3.3 ms of actual injection to wet a single-injector butterfly feeding 1600 cc. Cranking enrichment (200 % at 70 °C) is Speeduino's default for port injection and is slightly lean for TBI.
+
+Ruled out: bleed-down (user waits for prime pump to finish before cranking), ignition (brake cleaner proves spark works), fuel pressure (car drives fine hot), injector/driver/ballast (running-state OK).
+
+Recommended changes (user applies via TunerStudio + Burn — never edit `CurrentTune.msq` directly):
+
+| Table | Old values | New values |
+|---|---|---|
+| `primePulse` (ms) at -20/0/40/82 °C | 8.0 / 6.0 / 4.0 / 2.5 | **9.0 / 7.0 / 6.0 / 4.0** |
+| `crankingEnrichValues` (%) at -40/0/30/70 °C | 280 / 230 / 210 / 200 | **300 / 260 / 240 / 230** |
+
+Keep untouched: `injOpen`=1.2 ms, `reqFuel`=4.3 ms, `crankingPct`=20 %, `primingDelay`=2.0 s.
+
+### Pedal-only-60 % (P6) — 2026-07-30 discovery
+
+User recalibrated TPS at the TBI (butterfly closed=0 %, fully open=100 %). Then discovered pushing the pedal to the floor only rotates the butterfly to ~60 % of its full travel.
+
+Consequences:
+- **The engine has never physically been at WOT.** All prior "WOT" analysis was on a partially open butterfly.
+- Every datalog with `TPS = 100 %` (recorded before the butterfly-based recalibration) actually meant ~60 % butterfly.
+- `tpsflood`=80, `egoTPSMax`=70, `iacTPSlimit`=90 → all unreachable.
+- AE (TPS-based) under-measures throttle-DOT by 1.67×.
+- MAP-based fuel and ignition (both algorithms = MAP) are unaffected → cruise VE analysis up to ~70 kPa remains valid.
+
+Fix at the throttle cable adjuster on the TBI end: loosen jam nuts → helper presses pedal to floor → adjust so butterfly lever just reaches its mechanical stop → back off ~1 turn (so idle TPS stays at 0 %) → retighten. Then recalibrate TPS in TS (pedal fully pressed = 100 %).
+
+### VE table (page 1) — 2026-07-30 review
+
+- Shape is structurally OK: hand-crafted, monotonic, peak 94 % at 5000 RPM (correct for `reqFuel` computed at 3.0 bar vs actual rail 1.2 bar → VE < 100 % expected).
+- July 2026 datalog binning (5390 warm-running samples): every visited RPM/MAP cell reads AFR 17.5–19.7 vs target 14.7 = fake −20 to −38 % lean. This is the P1 wideband fault, not real leanness. **DO NOT run VEAnalyze — it would raise every visited cell +30 % and flood the engine.**
+- The VE map is frozen until P1 (wideband) and P6 (cable/pedal) are resolved.
+
+See [DOCUMENTACAO_REVISAO_TUNE_2026-06-10.md](DOCUMENTACAO_REVISAO_TUNE_2026-06-10.md) for the older full tune review.
 
 ---
 
@@ -354,10 +390,10 @@ See [DOCUMENTACAO_REVISAO_TUNE_2026-06-10.md](DOCUMENTACAO_REVISAO_TUNE_2026-06-
 |---|-------|--------|-----|
 | P1 | Wideband AFR pegged 19.7 ~80% (pin 6 JPT terminal no grip) | 🔴 Open | JPT 2.8mm female crimp terminals ordered |
 | P2 | IAC stepper not moving (replaced motor + DRV8825) | 🔴 Open | Diagnostic: Vref, nSLEEP/nRESET, VMOT, coil continuity |
-| P3 | Cold start fails after long parking (needs brake cleaner) | 🔴 Open | Test battery 75Ah + fresh gasoline |
+| P3 | Cold start fails after long parking (needs brake cleaner / fresh gasoline squirt on butterfly) | 🔴 Open | Apply primePulse 9/7/6/4 ms + crankingEnrich 300/260/240/230 % in TS + Burn |
 | P4 | Dies on fast throttle stab (transient bog/stall) | 🔴 Open | AE fix: taeRates 110/210/330/380, taeThresh 25, aeTime 450 |
-| P5 | VE table WOT ~30% lean (peak 94%, should be ~125-135%) | 🔴 Open | Fix injOpen; WOT scaling after wideband |
-| P6 | TPS calibration suspicious (tpsMin=30, tpsMax=147, span=117 ADC) | 🔴 Open | Recalibrate by hand at TBI |
+| P5 | VE table can't be autotuned yet (WB unreliable) + WOT never physically reached | 🔴 Blocked | Freeze VE. Fix P1 (WB) + P6 (cable) first, then autotune. |
+| P6 | **Pedal only reaches ~60 % butterfly travel** (cable adjustment). Engine never at WOT. | 🔴 Open | Adjust throttle cable at TBI; then recalibrate TPS with pedal at floor = 100 % |
 | P7 | CTPSEnabled=On with no CTPS wired (floating input) | 🟡 Open | Set Off |
 | P8 | injOpen=1.2ms, should be 1.1ms (ballast 1.8Ω approved) | 🟡 Open | Change to 1.1ms |
 | 1 | VE table too lean at idle (68%) | ✅ Fixed | Increased to 125% at 100kPa/500RPM |

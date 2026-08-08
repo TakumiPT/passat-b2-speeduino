@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <msq xmlns="http://www.msefi.com/:msq">
-<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="" writeDate="Fri Aug 07 23:33:47 BST 2026"/>
+<bibliography author="TunerStudio MS 3.3.01 - EFI Analytics, Inc." tuneComment="&lt;html&gt;Restore Point: User Requested Save of Settings - &lt;br&gt;" writeDate="Tue Jul 28 22:14:01 BST 2026"/>
 <versionInfo fileFormat="5.0" firmwareInfo="Speeduino+2025.01.6" nPages="15" signature="speeduino 202501"/>
 <page>
 <pcVariable name="tsCanId">"CAN ID 0"</pcVariable>
@@ -530,7 +530,7 @@
 <constant digits="0" name="tpsMax" units="ADC">223.0</constant>
 <constant digits="0" name="mapMin" units="kpa">10.0</constant>
 <constant digits="0" name="mapMax" units="kpa">260.0</constant>
-<constant digits="0" name="fpPrime" units="s">3.0</constant>
+<constant digits="0" name="fpPrime" units="s">5.0</constant>
 <constant digits="1" name="stoich" units=":1">14.7</constant>
 <constant digits="0" name="oddfire2" units="deg">0.0</constant>
 <constant digits="0" name="oddfire3" units="deg">0.0</constant>
@@ -573,10 +573,10 @@
          80.0 
       </constant>
 <constant cols="1" digits="1" name="primePulse" rows="4" units="ms">
-         26.0 
-         22.5 
-         19.0 
-         15.5 
+         8.0 
+         6.0 
+         4.0 
+         2.5 
       </constant>
 <constant cols="1" digits="0" name="primeBins" rows="4" units="C">
          -20.0 
@@ -615,7 +615,7 @@
 <constant name="idleUpOutputInv">"No"</constant>
 <constant name="idleUpOutputPin">"Board Default"</constant>
 <constant digits="0" name="tachoSweepMaxRPM" units="RPM">6000.0</constant>
-<constant digits="1" name="primingDelay" units="S">2.0</constant>
+<constant digits="1" name="primingDelay" units="S">3.0</constant>
 <constant digits="1" name="iacTPSlimit" units="%">90.0</constant>
 <constant digits="0" name="iacRPMlimitHysteresis" units="RPM">100.0</constant>
 <constant digits="0" name="rtc_trim" units="ppm">-1.0</constant>
@@ -1145,7 +1145,7 @@
          37.0 
          65.0 
       </constant>
-<constant name="iacAlgorithm">"None"</constant>
+<constant name="iacAlgorithm">"Stepper Open Loop"</constant>
 <constant name="iacStepTime">"3"</constant>
 <constant name="iacChannels">"1"</constant>
 <constant name="iacPWMdir">"Normal"</constant>
@@ -1721,10 +1721,10 @@
          70.0 
       </constant>
 <constant cols="1" digits="0" name="crankingEnrichValues" rows="4" units="%">
-         405.0 
-         380.0 
-         350.0 
-         325.0 
+         280.0 
+         230.0 
+         210.0 
+         200.0 
       </constant>
 <constant name="rotaryType">"FC"</constant>
 <constant name="stagingEnabled">"Off"</constant>
