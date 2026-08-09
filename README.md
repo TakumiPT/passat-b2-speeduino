@@ -14,6 +14,7 @@
 - [The Injector Current Problem](#the-injector-current-problem)
 - [Ballast Resistor Engineering](#ballast-resistor-engineering)
 - [Test Results (2026-03-01)](#test-results-2026-03-01--historical)
+- [Latest Findings Snapshot](#latest-findings-snapshot)
 - [Tune Configuration](#tune-configuration)
 - [Current Active Problems](#current-active-problems-2026-07-26)
 - [Known Issues & Fixes](#known-issues--fixes)
@@ -23,6 +24,10 @@
 - [References](#references)
 
 ---
+
+## Latest Findings Snapshot
+
+A dedicated findings snapshot for the current diagnosis state was created on **2026-08-09** in `INVESTIGATION_FINDINGS_2026-08-09.md`.
 
 ## Project Status
 
