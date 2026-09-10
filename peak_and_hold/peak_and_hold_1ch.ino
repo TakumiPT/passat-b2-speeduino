@@ -4,7 +4,7 @@
  * 
  * REPLACES THE BALLAST RESISTOR — no Speeduino board modifications!
  * 
- * Hardware: Arduino Nano + IRLZ44N logic-level MOSFET
+ * Hardware: Arduino Nano +    logic-level MOSFET
  * Injector: Gol G2 SPI (~2Ω, low impedance)
  * Fuel pressure at injector: 1.0-1.5 bar
  * 
@@ -78,8 +78,9 @@ const unsigned int PEAK_TIME_US = 1500;  // Peak phase: 1.5ms
                                           // Increase to 2000 if injector
                                           // doesn't open reliably
 
-const byte HOLD_DUTY = 44;               // Hold PWM (0-255)
-                                          // 44/255 = 17% ≈ 1.2A hold
+const byte HOLD_DUTY = 51;               // Hold PWM (0-255)
+                                          // 51/255 = 20% ≈ 1.2A hold
+                                          // (0.20 × 6A max = 1.2A)
                                           // Increase if injector drops
                                           // out during long pulses
                                           // Max safe value: ~80 (~2.4A)

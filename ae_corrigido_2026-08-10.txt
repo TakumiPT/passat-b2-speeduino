@@ -1,0 +1,14 @@
+AE CORRIGIDO - TPS REAL 100%
+==================================================
+
+taeThresh = 30 %/s
+taeBins   = 100 / 200 / 400 / 800 %/s
+taeRates  = 150 / 170 / 190 / 220 %
+aeTime    = 500 ms
+
+
+Justificacao:
+- TPS span mudou de 117 para 193 ADC (1.65x)
+- TPSDOT agora e 1.65x maior para mesmo pedal
+- AE precisa de bins/valores ajustados
+- Log mostra 81% eventos no bin mais baixo

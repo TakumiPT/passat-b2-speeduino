@@ -40,10 +40,10 @@ A dedicated findings snapshot for the current diagnosis state was created on **2
 | VE table baseline tuned | 🔧 In progress (shape good, WOT ~30% lean) |
 | WUE (warmup enrichment) calibrated | 🔧 In progress |
 | Ballast resistor installed (injector protection) | ✅ Done (1.8Ω 25W) |
-| Wideband O2 (LSU 4.9 + TinyWB) working | 🔴 Broken (pin 6 JPT contact fault) |
-| IAC stepper moving | 🔴 Not moving (diagnostic in progress) |
-| TPS calibrated | 🔴 Needs recalibration (span 117 ADC) |
-| AE (accel enrichment) calibrated | 🔴 Below backfire threshold |
+| Wideband O2 (LSU 4.9 + TinyWB) working | ✅ Done (new LSU validated 2026-08-09) |
+| IAC stepper moving | 🔴 Not moving (mechanical idle via bypass screw) |
+| TPS calibrated | ✅ Done (cable fixed, span 193 ADC, true 100%) |
+| AE (accel enrichment) calibrated | 🔴 Re-tune needed (TPS-DOT world changed by cable fix) |
 | IPO inspection passed | ⏳ Pending |
 | VIKA electronic distributor installed | ⏳ After IPO |
 | Speeduino ignition control enabled | ⏳ After distributor swap |
